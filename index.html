@@ -1,108 +1,30 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard Vetrine — Gabetti</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg:#f6f7fb; --card:#fff; --muted:#6b7280;
-      --green:#28a745; --yellow:#ffc107; --blue:#007bff; --red:#dc3545; --white:#ffffff;
-      --cell-w:150px; --cell-h:120px;
+<script>
+async function caricaVetrine() {
+    const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
+    const json = await res.json();
+
+    if (!json.success) {
+        console.error("Errore:", json.message);
+        return;
     }
-    *{box-sizing:border-box;font-family:Roboto,system-ui,Arial;}
-    body{margin:0;background:var(--bg);color:#111;}
-    .topbar{display:flex;align-items:center;gap:12px;padding:12px 18px;background:linear-gradient(90deg,#fff,#f1f4f8);border-bottom:1px solid #e6e9ee;}
-    .brand{font-weight:600;font-size:18px}
-    .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
-    select,button{padding:8px 10px;border-radius:6px;border:1px solid #d0d7e0;background:#fff;cursor:pointer}
-    .wrap{padding:18px}
-    .stats{display:flex;gap:12px;margin-bottom:12px;align-items:center}
-    .stat{background:var(--card);padding:10px 14px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cell-w),1fr));gap:10px}
-    .cell{background:var(--card);height:var(--cell-h);border-radius:8px;padding:8px;position:relative;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
-    .cell .ref{font-weight:600}
-    .cell .price{font-size:14px}
-    .cell .comune{font-size:12px;color:var(--muted)}
-    .cell .smallbtn{font-size:12px;padding:6px;border-radius:6px;border:0;cursor:pointer}
-    .actions{display:flex;gap:6px;align-items:center}
-    .badge{padding:6px 8px;border-radius:6px;font-size:13px;color:#fff}
-    .verde{background:linear-gradient(180deg,var(--green),#23963f);color:#fff}
-    .giallo{background:linear-gradient(180deg,var(--yellow),#e0a800);color:#111}
-    .blu{background:linear-gradient(180deg,var(--blue),#0069d9);color:#fff}
-    .rosso{background:linear-gradient(180deg,var(--red),#b21f2d);color:#fff}
-    .bianco{background:var(--white);border:1px dashed #e6e9ee}
-    .loader{width:18px;height:18px;border-radius:50%;border:3px solid rgba(0,0,0,0.08);border-top-color:#111;animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    /* modal */
-    .modal-back{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:50}
-    .modal{background:#fff;padding:16px;border-radius:10px;min-width:320px;max-width:90%}
-    .row{display:flex;gap:8px}
-    .toast{position:fixed;right:18px;bottom:18px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;display:none}
-    /* filters line */
-    .filters{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-    .filter-btn{padding:6px 8px;border-radius:6px;border:1px solid #d0d7e0;background:#fff;cursor:pointer}
-    /* responsive adjustments */
-    @media (max-width:640px){
-      .topbar{flex-direction:column;align-items:flex-start}
-      .controls{margin-left:0}
-      :root{--cell-w:120px;--cell-h:110px}
-    }
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <div class="brand">Dashboard Vetrine — Gabetti</div>
-    <div class="controls">
-      <label for="agency">Agenzia</label>
-      <select id="agency">
-        <option value="portogruaro">Portogruaro</option>
-        <option value="sanvito">San Vito</option>
-        <option value="pordenone">Pordenone</option>
-      </select>
-      <button id="refreshBtn">Aggiorna</button>
-      <div id="loading" style="display:none" title="Caricamento"><div class="loader"></div></div>
-    </div>
-  </div>
 
-  <div class="wrap">
-    <div class="stats" id="statsRow">
-      <div class="stat">Totali: <span id="statTotal">0</span></div>
-      <div class="stat">Gialli: <span id="statYellow">0</span></div>
-      <div class="stat">Rossi: <span id="statRed">0</span></div>
-      <div class="stat">Vecchi: <span id="statBlue">0</span></div>
-      <div class="stat">Segnaposto: <span id="statPlaceholder">0</span></div>
-      <div style="margin-left:auto">
-        <input id="searchInput" placeholder="Cerca RIF..." style="padding:8px;border-radius:6px;border:1px solid #d0d7e0">
-        <button id="searchBtn">Cerca</button>
-      </div>
-    </div>
+    const immobili = json.data;
 
-    <div class="filters">
-      <button class="filter-btn" data-filter="all">Tutti</button>
-      <button class="filter-btn" data-filter="gialli">Solo Gialli</button>
-      <button class="filter-btn" data-filter="rossi">Solo Rossi</button>
-      <button class="filter-btn" data-filter="placeholder">Solo Segnaposto</button>
-    </div>
+    console.log("Immobili trovati:", immobili.length);
 
-    <div id="grid" class="grid"></div>
-  </div>
+    document.getElementById("totale").textContent = immobili.length;
 
-  <!-- Modal confirm -->
-  <div id="modal" class="modal-back">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div id="modalContent"></div>
-      <div style="margin-top:12px;text-align:right">
-        <button id="modalCancel">Annulla</button>
-        <button id="modalConfirm">Conferma</button>
-      </div>
-    </div>
-  </div>
+    // esempio conteggio per agenzia
+    const perAgenzia = {};
 
-  <div id="toast" class="toast"></div>
+    immobili.forEach(i => {
+        perAgenzia[i.agenzia] = (perAgenzia[i.agenzia] || 0) + 1;
+    });
 
-  <script src="api.js"></script>
-  <script src="ui.js"></script>
-</body>
-</html>
+    document.getElementById("porto").textContent = perAgenzia["portogruaro"] || 0;
+    document.getElementById("sanvito").textContent = perAgenzia["sanvito"] || 0;
+    document.getElementById("pordenone").textContent = perAgenzia["pordenone"] || 0;
+}
+
+caricaVetrine();
+</script>
