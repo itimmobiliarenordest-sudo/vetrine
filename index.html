@@ -1,17 +1,49 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Vetrine</title>
+<meta charset="UTF-8">
+<title>Dashboard Vetrine</title>
+<style>
+  body { font-family: Arial, sans-serif; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  th { background-color: #f4f4f4; }
+  .normale { background-color: #fff; }
+  .ribasso { background-color: #ffecb3; } /* giallo per ribasso */
+  .segnaposto { background-color: #e0e0e0; } /* grigio chiaro */
+  button { padding: 4px 8px; cursor: pointer; }
+</style>
 </head>
 <body>
 
-<h1>Dati vetrine</h1>
+<h1>Dashboard Vetrine</h1>
 
-<p><strong>Totale immobili:</strong> <span id="totale">0</span></p>
-<p><strong>Portogruaro:</strong> <span id="porto">0</span></p>
-<p><strong>San Vito:</strong> <span id="sanvito">0</span></p>
-<p><strong>Pordenone:</strong> <span id="pordenone">0</span></p>
+<div>
+    <p>Totale immobili: <span id="totale">0</span></p>
+    <p>Portogruaro: <span id="porto">0</span></p>
+    <p>San Vito: <span id="sanvito">0</span></p>
+    <p>Pordenone: <span id="pordenone">0</span></p>
+</div>
+
+<table id="vetrinaTable">
+  <thead>
+    <tr>
+      <th>Rif</th>
+      <th>Prezzo</th>
+      <th>Prezzo MyAgency</th>
+      <th>Comune</th>
+      <th>Agenzia</th>
+      <th>Vetrina</th>
+      <th>Timestamp</th>
+      <th>Segnaposto</th>
+      <th>Ribasso</th>
+      <th>Cambia</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- righe generate dinamicamente -->
+  </tbody>
+</table>
 
 <script>
 async function caricaVetrine() {
@@ -25,13 +57,9 @@ async function caricaVetrine() {
 
     const immobili = json.data;
 
-    console.log("Immobili trovati:", immobili.length);
-
     document.getElementById("totale").textContent = immobili.length;
 
-    // esempio conteggio per agenzia
     const perAgenzia = {};
-
     immobili.forEach(i => {
         perAgenzia[i.agenzia] = (perAgenzia[i.agenzia] || 0) + 1;
     });
@@ -39,6 +67,41 @@ async function caricaVetrine() {
     document.getElementById("porto").textContent = perAgenzia["portogruaro"] || 0;
     document.getElementById("sanvito").textContent = perAgenzia["sanvito"] || 0;
     document.getElementById("pordenone").textContent = perAgenzia["pordenone"] || 0;
+
+    const tbody = document.querySelector("#vetrinaTable tbody");
+    tbody.innerHTML = ""; // pulisce la tabella
+
+    immobili.forEach(i => {
+        const tr = document.createElement("tr");
+        tr.className = i.segnaposto ? "segnaposto" : "normale";
+
+        tr.innerHTML = `
+            <td>${i.rif}</td>
+            <td>${i.prezzo}</td>
+            <td>${i.prezzo_myagency}</td>
+            <td>${i.comune}</td>
+            <td>${i.agenzia}</td>
+            <td>${i.vetrina}</td>
+            <td>${i.timestamp}</td>
+            <td>${i.segnaposto ? "✔" : ""}</td>
+            <td>${!i.segnaposto ? `<button onclick="ribassa(${i.id})">Ribassa</button>` : ""}</td>
+            <td><button onclick="cambia(${i.id})">Cambia</button></td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+function ribassa(id) {
+    if (confirm("Confermi il ribasso del prezzo?")) {
+        console.log("Ribasso confermato per ID:", id);
+        // qui puoi aggiungere la chiamata API per aggiornare il prezzo nel KV
+    }
+}
+
+function cambia(id) {
+    console.log("Cambia immobile ID:", id);
+    // qui puoi aprire un popup per selezionare nuovo immobile o segnaposto
 }
 
 caricaVetrine();
