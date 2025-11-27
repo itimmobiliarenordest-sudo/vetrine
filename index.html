@@ -4,121 +4,113 @@
 <meta charset="UTF-8">
 <title>Dashboard Vetrine</title>
 <style>
-  body { font-family: Arial, sans-serif; }
-  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-  th { background-color: #f4f4f4; }
-  .normale { background-color: #fff; }
-  .ribasso { background-color: #ffecb3; } /* giallo per ribasso */
-  .segnaposto { background-color: #e0e0e0; } /* grigio chiaro */
-  button { padding: 4px 8px; cursor: pointer; }
-  #conteggi { margin-top: 10px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+  .normale { background-color: white; }
+  .ribasso { background-color: #fff3b0; }
+  .segnaposto { background-color: #e0e0e0; }
+  .offline { background-color: #f8d7da; }
+  button.ribasso { padding: 2px 5px; font-size: 0.8em; }
 </style>
 </head>
 <body>
 
-<h1>Dashboard Vetrine</h1>
+<h2>Dashboard Vetrine</h2>
+
+<label for="agenziaSelect">Seleziona Agenzia:</label>
+<select id="agenziaSelect">
+    <option value="portogruaro">Portogruaro</option>
+    <option value="sanvito">San Vito</option>
+    <option value="pordenone">Pordenone</option>
+</select>
 
 <div>
-    <label for="agenziaFilter">Seleziona agenzia: </label>
-    <select id="agenziaFilter">
-        <option value="">-- Scegli Agenzia --</option>
-        <option value="portogruaro">Portogruaro</option>
-        <option value="sanvito">San Vito</option>
-        <option value="pordenone">Pordenone</option>
-    </select>
-</div>
-
-<div id="conteggi" style="display:none;">
     <p>Totale cartelli: <span id="totale">0</span></p>
     <p>Ribassi da fare: <span id="ribassi">0</span></p>
-    <p>Offline (segnaposto): <span id="offline">0</span></p>
+    <p>Offline: <span id="offline">0</span></p>
+    <p>Segnaposto: <span id="segnaposto">0</span></p>
 </div>
 
-<table id="vetrinaTable" style="display:none;">
+<table id="vetrinaTable">
   <thead>
     <tr>
+      <th>Vetrina</th>
       <th>Rif</th>
+      <th>Comune</th>
       <th>Prezzo</th>
       <th>Prezzo MyAgency</th>
-      <th>Comune</th>
-      <th>Vetrina</th>
       <th>Segnaposto</th>
-      <th>Ribasso</th>
-      <th>Cambia</th>
+      <th>Azioni</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
 <script>
-let immobiliGlobal = [];
-
 async function caricaVetrine() {
     const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
     const json = await res.json();
+    if (!json.success) { console.error("Errore:", json.message); return; }
 
-    if (!json.success) {
-        console.error("Errore:", json.message);
-        return;
+    const tuttiImmobili = json.data;
+
+    const agenziaSelect = document.getElementById("agenziaSelect");
+    const tableBody = document.querySelector("#vetrinaTable tbody");
+
+    function aggiornaTabella() {
+        const agenzia = agenziaSelect.value;
+        tableBody.innerHTML = "";
+
+        const cartelli = tuttiImmobili.filter(i => i.agenzia === agenzia);
+
+        let ribassiCount = 0, segnapostoCount = 0, offlineCount = 0;
+
+        // Creiamo mappa dei cartelli attesi per calcolare offline
+        const cartelliAttesi = agenzia === "portogruaro" ? 60 : agenzia === "sanvito" ? 18 : 24;
+        const presentiSet = new Set(cartelli.map(i => i.vetrina));
+
+        for (let i = 1; i <= cartelliAttesi; i++) {
+            const codice = (agenzia === "portogruaro" ? "PO-" : agenzia === "sanvito" ? "SA-" : "PN-") + String(i).padStart(2,"0");
+            const immobile = cartelli.find(c => c.vetrina === codice);
+            const tr = document.createElement("tr");
+
+            if (!immobile) {
+                // Offline = cartello mancante
+                tr.className = "offline";
+                tr.innerHTML = `<td>${codice}</td><td>-</td><td>-</td><td>0</td><td>0</td><td>No</td><td></td>`;
+                offlineCount++;
+            } else if (immobile.segnaposto) {
+                tr.className = "segnaposto";
+                tr.innerHTML = `<td>${immobile.vetrina}</td><td>${immobile.rif}</td><td>${immobile.comune}</td><td>${immobile.prezzo}</td><td>${immobile.prezzo_myagency}</td><td>Sì</td><td></td>`;
+                segnapostoCount++;
+            } else if (immobile.prezzo_myagency < immobile.prezzo) {
+                tr.className = "ribasso";
+                tr.innerHTML = `<td>${immobile.vetrina}</td><td>${immobile.rif}</td><td>${immobile.comune}</td><td>${immobile.prezzo}</td><td>${immobile.prezzo_myagency}</td><td>No</td>
+                                <td><button class="ribasso" onclick="confermaRibasso('${immobile.rif}')">Ribassa</button></td>`;
+                ribassiCount++;
+            } else {
+                tr.className = "normale";
+                tr.innerHTML = `<td>${immobile.vetrina}</td><td>${immobile.rif}</td><td>${immobile.comune}</td><td>${immobile.prezzo}</td><td>${immobile.prezzo_myagency}</td><td>No</td><td></td>`;
+            }
+            tableBody.appendChild(tr);
+        }
+
+        document.getElementById("totale").textContent = cartelliAttesi;
+        document.getElementById("ribassi").textContent = ribassiCount;
+        document.getElementById("offline").textContent = offlineCount;
+        document.getElementById("segnaposto").textContent = segnapostoCount;
     }
 
-    immobiliGlobal = json.data;
+    agenziaSelect.addEventListener("change", aggiornaTabella);
+    aggiornaTabella();
 }
 
-function aggiornaTabella(agenzia) {
-    const tbody = document.querySelector("#vetrinaTable tbody");
-    tbody.innerHTML = "";
-
-    if (!agenzia) return;
-
-    const filtrati = immobiliGlobal.filter(i => i.agenzia === agenzia);
-    let ribassiCount = 0;
-    let offlineCount = 0;
-
-    filtrati.forEach(i => {
-        const tr = document.createElement("tr");
-        tr.className = i.segnaposto ? "segnaposto" : (i.prezzo_myagency < i.prezzo ? "ribasso" : "normale");
-
-        if (!i.segnaposto && i.prezzo_myagency < i.prezzo) ribassiCount++;
-        if (i.segnaposto) offlineCount++;
-
-        tr.innerHTML = `
-            <td>${i.rif}</td>
-            <td>${i.prezzo}</td>
-            <td>${i.prezzo_myagency}</td>
-            <td>${i.comune}</td>
-            <td>${i.vetrina}</td>
-            <td>${i.segnaposto ? "✔" : ""}</td>
-            <td>${!i.segnaposto ? `<button onclick="ribassa(${i.id})">Ribassa</button>` : ""}</td>
-            <td><button onclick="cambia(${i.id})">Cambia</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    document.getElementById("totale").textContent = filtrati.length;
-    document.getElementById("ribassi").textContent = ribassiCount;
-    document.getElementById("offline").textContent = offlineCount;
-
-    document.getElementById("conteggi").style.display = filtrati.length ? "block" : "none";
-    document.getElementById("vetrinaTable").style.display = filtrati.length ? "table" : "none";
-}
-
-function ribassa(id) {
-    if (confirm("Confermi il ribasso del prezzo?")) {
-        console.log("Ribasso confermato per ID:", id);
-        // Aggiornamento KV qui
+function confermaRibasso(rif) {
+    if (confirm(`Confermi il ribasso per l'immobile ${rif}?`)) {
+        alert(`Ribasso confermato per immobile ${rif}`);
+        // qui si potrà chiamare API per aggiornare prezzo
     }
 }
-
-function cambia(id) {
-    console.log("Cambia immobile ID:", id);
-    // Apri popup per cambio immobile o segnaposto
-}
-
-document.getElementById("agenziaFilter").addEventListener("change", (e) => {
-    aggiornaTabella(e.target.value);
-});
 
 caricaVetrine();
 </script>
