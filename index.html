@@ -15,7 +15,18 @@
 </style>
 </head>
 <body>
+
 <h1>Dashboard Vetrine</h1>
+
+<div>
+    <label for="agenziaFilter">Filtra per agenzia: </label>
+    <select id="agenziaFilter">
+        <option value="tutte">Tutte</option>
+        <option value="portogruaro">Portogruaro</option>
+        <option value="sanvito">San Vito</option>
+        <option value="pordenone">Pordenone</option>
+    </select>
+</div>
 
 <div>
     <p>Totale immobili: <span id="totale">0</span></p>
@@ -45,6 +56,8 @@
 </table>
 
 <script>
+let immobiliGlobal = [];
+
 async function caricaVetrine() {
     const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
     const json = await res.json();
@@ -54,23 +67,30 @@ async function caricaVetrine() {
         return;
     }
 
-    const immobili = json.data;
+    immobiliGlobal = json.data;
+    aggiornaTabella("tutte");
+    aggiornaConteggi();
+}
 
-    document.getElementById("totale").textContent = immobili.length;
-
+function aggiornaConteggi() {
     const perAgenzia = {};
-    immobili.forEach(i => {
+    immobiliGlobal.forEach(i => {
         perAgenzia[i.agenzia] = (perAgenzia[i.agenzia] || 0) + 1;
     });
 
+    document.getElementById("totale").textContent = immobiliGlobal.length;
     document.getElementById("porto").textContent = perAgenzia["portogruaro"] || 0;
     document.getElementById("sanvito").textContent = perAgenzia["sanvito"] || 0;
     document.getElementById("pordenone").textContent = perAgenzia["pordenone"] || 0;
+}
 
+function aggiornaTabella(filtro) {
     const tbody = document.querySelector("#vetrinaTable tbody");
-    tbody.innerHTML = ""; // pulisce la tabella
+    tbody.innerHTML = "";
 
-    immobili.forEach(i => {
+    const filtrati = filtro === "tutte" ? immobiliGlobal : immobiliGlobal.filter(i => i.agenzia === filtro);
+
+    filtrati.forEach(i => {
         const tr = document.createElement("tr");
         tr.className = i.segnaposto ? "segnaposto" : "normale";
 
@@ -86,7 +106,6 @@ async function caricaVetrine() {
             <td>${!i.segnaposto ? `<button onclick="ribassa(${i.id})">Ribassa</button>` : ""}</td>
             <td><button onclick="cambia(${i.id})">Cambia</button></td>
         `;
-
         tbody.appendChild(tr);
     });
 }
@@ -94,14 +113,18 @@ async function caricaVetrine() {
 function ribassa(id) {
     if (confirm("Confermi il ribasso del prezzo?")) {
         console.log("Ribasso confermato per ID:", id);
-        // qui puoi aggiungere la chiamata API per aggiornare il prezzo nel KV
+        // Aggiornamento KV qui
     }
 }
 
 function cambia(id) {
     console.log("Cambia immobile ID:", id);
-    // qui puoi aprire un popup per selezionare nuovo immobile o segnaposto
+    // Apri popup per cambio immobile o segnaposto
 }
+
+document.getElementById("agenziaFilter").addEventListener("change", (e) => {
+    aggiornaTabella(e.target.value);
+});
 
 caricaVetrine();
 </script>
