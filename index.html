@@ -80,21 +80,21 @@
   /* Classi per stato */
   .cella.offline { background-color: #f0f0f0; color: #999; }
   .cella.segnaposto { background-color: #87a0fa; color: white; }
-  .cella.ribasso { background-color: #ffeb99; color: #555; }
+  .cella.ribasso { background-color: #ffeb99; color: #555; } /* Giallo mantenuto */
   .cella.normale { background-color: #a0e7a0; color: #333; }
   
-  /* NUOVA CLASSE PER EVIDENZIAZIONE RICERCA */
+  /* CLASSE PER EVIDENZIAZIONE RICERCA (BLU/AZZURRO) */
   .cella.evidenziato {
-    background-color: #ff9900 !important; /* Arancione brillante, sovrascrive */
+    background-color: #4da6ff !important; /* Azzurro brillante */
     color: white !important;
     transform: scale(1.05) translateY(-5px); 
-    box-shadow: 0 8px 20px rgba(255, 153, 0, 0.5);
-    border: 3px solid white; /* Bordo bianco per contrasto */
+    box-shadow: 0 8px 20px rgba(77, 166, 255, 0.5);
+    border: 3px solid white; 
   }
 
   .cella .prezzo-vecchio {
     text-decoration: line-through;
-    font-weight: normal; /* Modificato: forza normale per non essere grassetto */
+    font-weight: normal; 
     font-size: 0.85em;
     color: #666;
     margin-bottom: 2px;
@@ -102,7 +102,7 @@
   }
 
   .cella .prezzo-nuovo {
-    font-weight: bold; /* Aggiunto: per enfatizzare il prezzo nuovo/attuale */
+    font-weight: bold; 
     color: black;
     margin-bottom: 2px;
     word-break: break-word;
@@ -137,10 +137,14 @@
       transform: scale(1.1); 
   }
   
-  #bottoneCerca { /* Stile specifico per il pulsante cerca */
+  #bottoneCerca { 
       padding: 8px 15px;
       font-size: 14px;
       margin-top: 0;
+      background-color: #007bff; /* Blu per coerenza */
+  }
+  #bottoneCerca:hover {
+      background-color: #0056b3;
   }
 
   .conteggi {
@@ -205,36 +209,16 @@ const bottoneCerca = document.getElementById('bottoneCerca');
 let rifDaCercare = '';
 
 async function caricaVetrine() {
-  // L'URL è stato commentato per consentire il funzionamento in locale senza un server attivo, 
-  // ma DEVE essere riattivato quando usato in produzione.
-  /*
-  const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
-  const json = await res.json();
-  if (!json.success) { console.error("Errore:", json.message); return; }
-  immobili = json.data;
-  */
-
-  // Dati di ESEMPIO per il test in locale
-  immobili = [
-    { rif: '1234', comune: 'Porto', prezzo: 150000, prezzo_myagency: 140000, agenzia: 'portogruaro', segnaposto: false },
-    { rif: '1235', comune: 'Porto', prezzo: 130000, prezzo_myagency: 130000, agenzia: 'portogruaro', segnaposto: false },
-    { rif: '1236', comune: 'Porto', prezzo: 180000, prezzo_myagency: 160000, agenzia: 'portogruaro', segnaposto: false },
-    { rif: '1237', comune: 'Porto', prezzo: 0, prezzo_myagency: 0, agenzia: 'portogruaro', segnaposto: false },
-    { rif: '4567', comune: 'S. Vito', prezzo: 200000, prezzo_myagency: 200000, agenzia: 'sanvito', segnaposto: false },
-    { rif: '4568', comune: 'S. Vito', prezzo: 0, prezzo_myagency: 0, agenzia: 'sanvito', segnaposto: false },
-    { rif: '7890', comune: 'Pordenone', prezzo: 120000, prezzo_myagency: 120000, agenzia: 'pordenone', segnaposto: false },
-    { rif: 'RIBB', comune: 'Porto', prezzo: 220000, prezzo_myagency: 215000, agenzia: 'portogruaro', segnaposto: false },
-    { rif: '9999', comune: 'Porto', prezzo: 0, prezzo_myagency: 0, agenzia: 'portogruaro', segnaposto: false },
-    // Aggiungi abbastanza elementi per riempire la griglia
-    ...Array(30).fill(null).map((_, i) => ({ 
-        rif: `A${100 + i}`, 
-        comune: 'Dummy', 
-        prezzo: 100000 + i * 1000, 
-        prezzo_myagency: 100000 + i * 1000, 
-        agenzia: 'portogruaro', 
-        segnaposto: false 
-    })),
-  ];
+  // CHIAMATA API ORIGINALE RIPRISTINATA
+  try {
+    const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
+    const json = await res.json();
+    if (!json.success) { console.error("Errore API:", json.message); return; }
+    immobili = json.data;
+  } catch (error) {
+    console.error("Errore durante il caricamento delle vetrine:", error);
+    // In caso di errore, si può lasciare l'array vuoto o caricare dati di fallback
+  }
   
   renderGriglia();
 }
@@ -242,7 +226,6 @@ async function caricaVetrine() {
 function renderGriglia() {
   const agenzia = selectAgenzia.value;
   const blocchi = agenzieBlocchi[agenzia];
-  // Filtra immobili che corrispondono all'agenzia selezionata E quelli che non sono stati 'accettati' come ribasso
   const immobiliFiltrati = immobili.filter(i => i.agenzia === agenzia); 
 
   grigliaDiv.innerHTML = '';
@@ -250,11 +233,10 @@ function renderGriglia() {
   let countRibasso = 0;
   let countOffline = 0;
 
-  // Calcola il numero totale di celle che la griglia dovrebbe avere per riempire gli spazi vuoti
+  // Gestione delle celle vuote (segnaposto OFFLINE)
   const celleTotali = blocchi.reduce((sum, current) => sum + current, 0) * righe;
   const immobiliConSegnaposto = [...immobiliFiltrati];
 
-  // Riempie le celle rimanenti con placeholder (in base al numero totale necessario)
   while (immobiliConSegnaposto.length < celleTotali) {
       immobiliConSegnaposto.push(null);
   }
@@ -275,7 +257,9 @@ function renderGriglia() {
         if (!immobile || immobile.prezzo === 0) {
           cella.classList.add('offline');
           cella.textContent = "OFFLINE";
-          countOffline++;
+          // Il conteggio Offline è basato sugli immobili filtrati reali, 
+          // non sui segnaposto aggiunti per la griglia, quindi lo conteggiamo solo se esiste un immobile reale (indice < immobiliFiltrati.length)
+          if(indice < immobiliFiltrati.length) countOffline++;
 
         } else if (immobile.segnaposto) {
           cella.classList.add('segnaposto');
@@ -305,7 +289,7 @@ function renderGriglia() {
         // LOGICA DI EVIDENZIAZIONE: Controlla se il riferimento corrisponde alla ricerca
         if (immobile && immobile.rif && rifDaCercare && immobile.rif.toLowerCase() === rifDaCercare.toLowerCase()) {
             cella.classList.add('evidenziato');
-            // Scorrimento al cartello trovato dopo un breve ritardo per l'animazione
+            // Scorrimento al cartello trovato
             setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
         }
 
@@ -342,7 +326,6 @@ function renderGriglia() {
     grigliaDiv.appendChild(rigaDiv);
   }
 
-  // I conteggi sono basati sul numero reale di immobili filtrati, non sul totale delle celle
   document.getElementById('totale').textContent = immobiliFiltrati.length;
   document.getElementById('ribassi').textContent = countRibasso;
   document.getElementById('offline').textContent = countOffline;
@@ -351,16 +334,17 @@ function renderGriglia() {
 // FUNZIONE PER GESTIRE LA RICERCA
 function gestisciRicerca() {
     const valore = inputRicerca.value.trim();
-    if (valore) {
-        // Imposta il riferimento da cercare (case-insensitive)
-        rifDaCercare = valore;
-    } else {
-        // Se l'input è vuoto, resetta la ricerca
-        rifDaCercare = '';
+    // Il riferimento da cercare è sempre impostato in minuscolo per una ricerca case-insensitive
+    rifDaCercare = valore.toLowerCase(); 
+    
+    // Se è stata effettuata una ricerca e la griglia è già caricata, svuoto l'input 
+    // per non doverlo svuotare a mano ad ogni refresh
+    if (rifDaCercare) {
+        inputRicerca.value = rifDaCercare.toUpperCase(); // Rimetto in maiuscolo visivamente
     }
-    renderGriglia(); // Ricarica la griglia per applicare/rimuovere l'evidenziazione
+    
+    renderGriglia(); 
 }
-
 
 selectAgenzia.addEventListener('change', renderGriglia);
 bottoneCerca.addEventListener('click', gestisciRicerca);
