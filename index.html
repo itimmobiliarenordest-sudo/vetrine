@@ -6,15 +6,14 @@
 <style>
   body { font-family: sans-serif; margin: 20px; }
   .griglia { display: flex; flex-direction: column; gap: 20px; }
-  .riga { display: flex; gap: 5px; }
+  .riga { display: flex; gap: 10px; }
   .blocco { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
-  .nome-blocco { text-align: center; font-weight: bold; margin-bottom: 5px; }
-  .cella { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #ccc; cursor: pointer; }
+  .cella { width: 100px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #ccc; cursor: pointer; padding: 2px; font-size: 12px; box-sizing: border-box; }
   .cella.offline { background-color: #eee; }
   .cella.segnaposto { background-color: #fff; }
   .cella.ribasso { background-color: #ffdd57; }
   .cella.normale { background-color: #a0e7a0; }
-  button { font-size: 10px; padding: 2px 5px; position: absolute; bottom: 2px; }
+  button { font-size: 10px; padding: 2px 5px; margin-top: 2px; }
   .conteggi { margin-top: 20px; }
 </style>
 </head>
@@ -72,41 +71,41 @@ function renderGriglia() {
     const riga = document.createElement('div');
     riga.classList.add('riga');
 
-    blocchi.forEach((colonne, idx) => {
+    blocchi.forEach((colonne) => {
       const blocco = document.createElement('div');
       blocco.classList.add('blocco');
-
-      // nome del blocco
-      const nomeBlocco = document.createElement('div');
-      nomeBlocco.classList.add('nome-blocco');
-      nomeBlocco.textContent = `VETRINA ${String.fromCharCode(65 + idx)}`; // A, B, C...
-      blocco.appendChild(nomeBlocco);
 
       for (let c = 0; c < colonne; c++) {
         const immobile = immobiliFiltrati[indice];
         const cella = document.createElement('div');
         cella.classList.add('cella');
 
-        if (!immobile) {
+        if (!immobile || immobile.prezzo === 0) {
           cella.classList.add('offline');
+          cella.innerHTML = "OFFLINE";
           countOffline++;
         } else if (immobile.segnaposto) {
           cella.classList.add('segnaposto');
-        } else if (immobile.prezzo_myagency < immobile.prezzo) {
-          cella.classList.add('ribasso');
-          countRibasso++;
+          cella.innerHTML = "SEGNAPOSTO";
         } else {
-          cella.classList.add('normale');
+          if (immobile.prezzo_myagency < immobile.prezzo) {
+            cella.classList.add('ribasso');
+            countRibasso++;
+          } else {
+            cella.classList.add('normale');
+          }
+          // Info cartello
+          cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
         // Pulsante ribasso
-        if (immobile && !immobile.segnaposto) {
+        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0) {
           const btn = document.createElement('button');
           btn.textContent = "Ribasso";
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
-              immobile.prezzo_myagency = immobile.prezzo_myagency * 0.95;
+              immobile.prezzo_myagency = Math.round(immobile.prezzo_myagency * 0.95);
               renderGriglia();
             }
           });
@@ -136,9 +135,7 @@ function renderGriglia() {
   document.getElementById('offline').textContent = countOffline;
 }
 
-// cambia agenzia
 selectAgenzia.addEventListener('change', renderGriglia);
-
 caricaVetrine();
 </script>
 
