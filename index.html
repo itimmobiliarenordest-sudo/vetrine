@@ -2,12 +2,13 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Vetrine</title>
+<title>Dashboard Vetrine - Portogruaro</title>
 <style>
   body { font-family: sans-serif; margin: 20px; }
-  select { margin-bottom: 20px; }
-  .griglia { display: flex; flex-direction: column; gap: 10px; }
-  .riga { display: flex; gap: 10px; }
+  .griglia { display: flex; flex-direction: column; gap: 15px; }
+  .riga { display: flex; gap: 5px; }
+  .blocco { display: flex; gap: 5px; }
+  .separatore { width: 20px; } /* spazio più spesso tra i blocchi */
   .cella { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #ccc; cursor: pointer; }
   .cella.offline { background-color: #eee; }
   .cella.segnaposto { background-color: #fff; }
@@ -19,14 +20,7 @@
 </head>
 <body>
 
-<h1>Dashboard Vetrine</h1>
-
-<label for="seleziona-agenzia">Agenzia:</label>
-<select id="seleziona-agenzia">
-  <option value="portogruaro">Portogruaro</option>
-  <option value="sanvito">San Vito</option>
-  <option value="pordenone">Pordenone</option>
-</select>
+<h1>Portogruaro - Dashboard Vetrine</h1>
 
 <div class="griglia" id="griglia"></div>
 
@@ -37,93 +31,94 @@
 </div>
 
 <script>
-const struttura = {
-  portogruaro: [4,4,3,4,5],
-  sanvito: [2,2,2],
-  pordenone: [3,5]
-};
+const blocchi = [4, 4, 3, 4, 5]; // numero colonne per ogni blocco
+const righe = 3;
 
 const grigliaDiv = document.getElementById('griglia');
-const selectAgenzia = document.getElementById('seleziona-agenzia');
 let immobili = [];
 
 async function caricaVetrine() {
   const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
   const json = await res.json();
   if (!json.success) { console.error("Errore:", json.message); return; }
-  immobili = json.data;
+  immobili = json.data.filter(i => i.agenzia === "portogruaro");
   renderGriglia();
 }
 
 function renderGriglia() {
-  const agenzia = selectAgenzia.value;
   grigliaDiv.innerHTML = '';
-  
-  const immobiliAgenzia = immobili.filter(i => i.agenzia === agenzia);
-
+  let indice = 0;
   let countRibasso = 0;
   let countOffline = 0;
 
-  let indice = 0;
-
-  struttura[agenzia].forEach((colonne, rigaIdx) => {
+  for (let r = 0; r < righe; r++) {
     const riga = document.createElement('div');
     riga.classList.add('riga');
 
-    for (let c = 0; c < colonne; c++) {
-      const immobile = immobiliAgenzia[indice];
-      const cella = document.createElement('div');
-      cella.classList.add('cella');
+    blocchi.forEach((colonne, idx) => {
+      const blocco = document.createElement('div');
+      blocco.classList.add('blocco');
 
-      if (!immobile) {
-        cella.classList.add('offline');
-        countOffline++;
-      } else if (immobile.segnaposto) {
-        cella.classList.add('segnaposto');
-      } else if (immobile.prezzo_myagency < immobile.prezzo) {
-        cella.classList.add('ribasso');
-        countRibasso++;
-      } else {
-        cella.classList.add('normale');
-      }
+      for (let c = 0; c < colonne; c++) {
+        const immobile = immobili[indice];
+        const cella = document.createElement('div');
+        cella.classList.add('cella');
 
-      // Pulsante ribasso
-      if (immobile && !immobile.segnaposto) {
-        const btn = document.createElement('button');
-        btn.textContent = "Ribasso";
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
-            alert(`Ribasso eseguito per ${immobile.rif}`);
-            // Aggiorna stato locale per la visualizzazione
-            immobile.prezzo_myagency = immobile.prezzo_myagency * 0.95;
+        if (!immobile) {
+          cella.classList.add('offline');
+          countOffline++;
+        } else if (immobile.segnaposto) {
+          cella.classList.add('segnaposto');
+        } else if (immobile.prezzo_myagency < immobile.prezzo) {
+          cella.classList.add('ribasso');
+          countRibasso++;
+        } else {
+          cella.classList.add('normale');
+        }
+
+        // Pulsante ribasso
+        if (immobile && !immobile.segnaposto) {
+          const btn = document.createElement('button');
+          btn.textContent = "Ribasso";
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
+              immobile.prezzo_myagency = immobile.prezzo_myagency * 0.95;
+              renderGriglia();
+            }
+          });
+          cella.appendChild(btn);
+        }
+
+        // Toggle segnaposto al click
+        cella.addEventListener('click', () => {
+          if (immobile) {
+            immobile.segnaposto = !immobile.segnaposto;
             renderGriglia();
           }
         });
-        cella.appendChild(btn);
+
+        blocco.appendChild(cella);
+        indice++;
       }
 
-      // Toggle segnaposto al click
-      cella.addEventListener('click', () => {
-        if (immobile) {
-          immobile.segnaposto = !immobile.segnaposto;
-          renderGriglia();
-        }
-      });
+      // separatore più spesso tra blocchi
+      if (idx < blocchi.length - 1) {
+        const sep = document.createElement('div');
+        sep.classList.add('separatore');
+        blocco.appendChild(sep);
+      }
 
-      riga.appendChild(cella);
-      indice++;
-    }
+      riga.appendChild(blocco);
+    });
 
     grigliaDiv.appendChild(riga);
-  });
+  }
 
-  document.getElementById('totale').textContent = immobiliAgenzia.length;
+  document.getElementById('totale').textContent = immobili.length;
   document.getElementById('ribassi').textContent = countRibasso;
   document.getElementById('offline').textContent = countOffline;
 }
-
-selectAgenzia.addEventListener('change', renderGriglia);
 
 caricaVetrine();
 </script>
