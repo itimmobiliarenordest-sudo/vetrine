@@ -80,12 +80,12 @@
   /* Classi per stato */
   .cella.offline { background-color: #f0f0f0; color: #999; }
   .cella.segnaposto { background-color: #87A0CC; color: white; }
-  .cella.ribasso { background-color: #ffeb99; color: #555; } /* Giallo mantenuto */
+  .cella.ribasso { background-color: #ffeb99; color: #555; }
   .cella.normale { background-color: #a0e7a0; color: #333; }
   
   /* CLASSE PER EVIDENZIAZIONE RICERCA (BLU/AZZURRO) */
   .cella.evidenziato {
-    background-color: #4da6ff !important; /* Azzurro brillante */
+    background-color: #4da6ff !important;
     color: white !important;
     transform: scale(1.05) translateY(-5px); 
     box-shadow: 0 8px 20px rgba(77, 166, 255, 0.5);
@@ -141,7 +141,7 @@
       padding: 8px 15px;
       font-size: 14px;
       margin-top: 0;
-      background-color: #007bff; /* Blu per coerenza */
+      background-color: #007bff;
   }
   #bottoneCerca:hover {
       background-color: #0056b3;
@@ -205,11 +205,9 @@ const selectAgenzia = document.getElementById('selezionaAgenzia');
 const inputRicerca = document.getElementById('inputRicerca');
 const bottoneCerca = document.getElementById('bottoneCerca');
 
-// Variabile per tenere traccia del riferimento da evidenziare
 let rifDaCercare = '';
 
 async function caricaVetrine() {
-  // CHIAMATA API ORIGINALE RIPRISTINATA
   try {
     const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
     const json = await res.json();
@@ -217,7 +215,6 @@ async function caricaVetrine() {
     immobili = json.data;
   } catch (error) {
     console.error("Errore durante il caricamento delle vetrine:", error);
-    // In caso di errore, si può lasciare l'array vuoto o caricare dati di fallback
   }
   
   renderGriglia();
@@ -233,7 +230,6 @@ function renderGriglia() {
   let countRibasso = 0;
   let countOffline = 0;
 
-  // Gestione delle celle vuote (segnaposto OFFLINE)
   const celleTotali = blocchi.reduce((sum, current) => sum + current, 0) * righe;
   const immobiliConSegnaposto = [...immobiliFiltrati];
 
@@ -257,8 +253,6 @@ function renderGriglia() {
         if (!immobile || immobile.prezzo === 0) {
           cella.classList.add('offline');
           cella.textContent = "OFFLINE";
-          // Il conteggio Offline è basato sugli immobili filtrati reali, 
-          // non sui segnaposto aggiunti per la griglia, quindi lo conteggiamo solo se esiste un immobile reale (indice < immobiliFiltrati.length)
           if(indice < immobiliFiltrati.length) countOffline++;
 
         } else if (immobile.segnaposto) {
@@ -286,13 +280,11 @@ function renderGriglia() {
           }
         }
         
-        // LOGICA DI EVIDENZIAZIONE: Controlla se il riferimento corrisponde alla ricerca
+        // LOGICA DI EVIDENZIAZIONE
         if (immobile && immobile.rif && rifDaCercare && immobile.rif.toLowerCase() === rifDaCercare.toLowerCase()) {
             cella.classList.add('evidenziato');
-            // Scorrimento al cartello trovato
             setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
         }
-
 
         // Aggiungi pulsante Ribasso SOLO se non è segnaposto e c'è un ribasso
         if (immobile && !immobile.segnaposto && immobile.prezzo_myagency < immobile.prezzo) {
@@ -308,11 +300,21 @@ function renderGriglia() {
           cella.appendChild(btn);
         }
         
-        // Logica click per segnaposto (se non è offline e non è vuoto)
+        // NUOVA LOGICA CLICK PER SEGNAPOSTO
         if (immobile) {
             cella.addEventListener('click', () => {
-              immobile.segnaposto = !immobile.segnaposto;
-              renderGriglia();
+                
+                // 1. Blocco se è un cartello di Ribasso (giallo) e non è già un segnaposto
+                const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
+                if (isRibasso && !immobile.segnaposto) {
+                    return; // Non fa nulla sul click del giallo se è in stato "Ribasso da fare"
+                }
+                
+                // 2. Chiedi conferma per TUTTI gli altri (Normale, Offline, o per TOGLIERE il segnaposto)
+                if (confirm(`Confermi la modifica di stato per il cartello ${immobile.rif}?`)) {
+                    immobile.segnaposto = !immobile.segnaposto;
+                    renderGriglia();
+                }
             });
         }
 
@@ -331,16 +333,12 @@ function renderGriglia() {
   document.getElementById('offline').textContent = countOffline;
 }
 
-// FUNZIONE PER GESTIRE LA RICERCA
 function gestisciRicerca() {
     const valore = inputRicerca.value.trim();
-    // Il riferimento da cercare è sempre impostato in minuscolo per una ricerca case-insensitive
     rifDaCercare = valore.toLowerCase(); 
     
-    // Se è stata effettuata una ricerca e la griglia è già caricata, svuoto l'input 
-    // per non doverlo svuotare a mano ad ogni refresh
     if (rifDaCercare) {
-        inputRicerca.value = rifDaCercare.toUpperCase(); // Rimetto in maiuscolo visivamente
+        inputRicerca.value = rifDaCercare.toUpperCase();
     }
     
     renderGriglia(); 
