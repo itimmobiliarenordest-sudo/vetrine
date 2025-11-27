@@ -250,7 +250,7 @@ function renderGriglia() {
         const cella = document.createElement('div');
         cella.classList.add('cella', 'fade');
 
-        if (!immobile || immobile.prezzo === 0) {
+        if (!immobile || immobile.prezzo_myagency === 0) {
           cella.classList.add('offline');
           cella.textContent = "OFFLINE";
           if(indice < immobiliFiltrati.length) countOffline++;
