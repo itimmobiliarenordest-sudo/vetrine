@@ -4,34 +4,62 @@
 <meta charset="UTF-8">
 <title>Dashboard Vetrine</title>
 <style>
-  body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    background: #f4f4f9; 
-    margin: 20px; 
-    color: #333;
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f4f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
   }
-  h1 { text-align: center; color: #b35933; }
+
+  h1 {
+    text-align: center;
+    color: #b35933;
+    margin-top: 20px;
+  }
+
   label { font-weight: bold; }
   select { padding: 5px 10px; margin: 10px 0; font-size: 14px; }
-  
-  .griglia { display: flex; flex-direction: column; gap: 15px; }
-  .riga { display: flex; gap: 10px; }
+
+  .griglia {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .riga { display: flex; gap: 10px; justify-content: center; }
+
   .blocco {
-    display: flex; gap: 8px;
+    display: flex;
+    gap: 8px;
     padding: 5px;
     border-right: 3px solid #b35933;
+    transition: transform 0.3s;
   }
+
   .blocco:last-child { border-right: none; }
-  
+
   .cella {
-    width: 90px; height: 80px; 
+    width: 90px; height: 80px;
     border-radius: 12px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 12px; box-sizing: border-box; cursor: pointer; padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-sizing: border-box;
+    cursor: pointer;
+    padding: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+    text-align: center;
   }
-  .cella:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+  .cella:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
 
   .cella.offline { background-color: #f0f0f0; color: #999; }
   .cella.segnaposto { background-color: #fff3e0; color: #555; }
@@ -39,25 +67,36 @@
   .cella.normale { background-color: #a0e7a0; color: #333; }
 
   button {
-    margin-top: 4px; 
-    font-size: 10px; 
-    padding: 2px 5px; 
-    border: none; 
-    border-radius: 5px; 
-    background-color: #b35933; 
-    color: white; 
+    margin-top: 4px;
+    font-size: 10px;
+    padding: 2px 5px;
+    border: none;
+    border-radius: 5px;
+    background-color: #b35933;
+    color: white;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s, transform 0.3s;
   }
-  button:hover { background-color: #8b0a25; }
 
-  .conteggi { 
-    margin-top: 20px; 
+  button:hover { background-color: #8b0a25; transform: scale(1.1); }
+
+  .conteggi {
+    margin-top: 20px;
     font-weight: bold;
     display: flex;
     gap: 30px;
     justify-content: center;
     font-size: 14px;
+  }
+
+  /* Animazioni per cambio stato */
+  .fade {
+    animation: fadeIn 0.4s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
   }
 </style>
 </head>
@@ -86,7 +125,6 @@ const agenzieBlocchi = {
   sanvito: [2, 2, 2],
   pordenone: [3, 5]
 };
-
 const righe = 3;
 let immobili = [];
 
@@ -115,14 +153,14 @@ function renderGriglia() {
     const rigaDiv = document.createElement('div');
     rigaDiv.classList.add('riga');
 
-    blocchi.forEach((colonne, bloccoIdx) => {
+    blocchi.forEach((colonne) => {
       const bloccoDiv = document.createElement('div');
       bloccoDiv.classList.add('blocco');
 
       for (let c = 0; c < colonne; c++) {
         const immobile = immobiliFiltrati[indice];
         const cella = document.createElement('div');
-        cella.classList.add('cella');
+        cella.classList.add('cella', 'fade');
 
         if (!immobile || immobile.prezzo === 0) {
           cella.classList.add('offline');
@@ -141,7 +179,6 @@ function renderGriglia() {
           cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
-        // Pulsante ribasso
         if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0) {
           const btn = document.createElement('button');
           btn.textContent = "Ribasso";
@@ -155,7 +192,6 @@ function renderGriglia() {
           cella.appendChild(btn);
         }
 
-        // Toggle segnaposto
         cella.addEventListener('click', () => {
           if (immobile) {
             immobile.segnaposto = !immobile.segnaposto;
@@ -166,7 +202,6 @@ function renderGriglia() {
         bloccoDiv.appendChild(cella);
         indice++;
       }
-
       rigaDiv.appendChild(bloccoDiv);
     });
 
