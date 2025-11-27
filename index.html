@@ -82,6 +82,7 @@
       background-color: #ffa726; 
       transform: scale(1.1); 
   }
+
   .conteggi {
     margin-top: 20px;
     font-weight: bold;
@@ -91,7 +92,7 @@
     font-size: 14px;
   }
 
-  /* Animazioni per cambio stato */
+  /* Animazione fade */
   .fade {
     animation: fadeIn 0.4s ease-in-out;
   }
@@ -160,6 +161,7 @@ function renderGriglia() {
       bloccoDiv.classList.add('blocco');
 
       for (let c = 0; c < colonne; c++) {
+
         const immobile = immobiliFiltrati[indice];
         const cella = document.createElement('div');
         cella.classList.add('cella', 'fade');
@@ -168,35 +170,54 @@ function renderGriglia() {
           cella.classList.add('offline');
           cella.innerHTML = "OFFLINE";
           countOffline++;
+
         } else if (immobile.segnaposto) {
           cella.classList.add('segnaposto');
           cella.innerHTML = "SEGNAPOSTO";
+
         } else {
-          if (immobile.prezzo_myagency < immobile.prezzo) {
+          const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
+
+          if (isRibasso) {
             cella.classList.add('ribasso');
             countRibasso++;
+
+            cella.innerHTML = `
+              <s>${immobile.prezzo} €</s><br>
+              ↓<br>
+              <b>${immobile.prezzo_myagency} €</b><br>
+              ${immobile.comune}
+            `;
           } else {
             cella.classList.add('normale');
+            cella.innerHTML = `
+              ${immobile.rif}<br>
+              ${immobile.prezzo_myagency} €<br>
+              ${immobile.comune}
+            `;
           }
-          cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
-        // Mostra il pulsante Ribasso SOLO se la cella è gialla (ribasso)
-        if (immobile && cella.classList.contains('ribasso')) {
+        // Pulsante RIBASSO solo per card gialle
+        if (immobile && immobile.prezzo_myagency < immobile.prezzo) {
+
           const btn = document.createElement('button');
           btn.textContent = "Ribasso";
-        
+
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
+
             if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
-              immobile.prezzo_myagency = Math.round(immobile.prezzo_myagency * 0.95);
+
+              // Applica ribasso DEFINITIVO
+              immobile.prezzo = immobile.prezzo_myagency;
+
               renderGriglia();
             }
           });
-        
+
           cella.appendChild(btn);
         }
-
 
         cella.addEventListener('click', () => {
           if (immobile) {
@@ -208,6 +229,7 @@ function renderGriglia() {
         bloccoDiv.appendChild(cella);
         indice++;
       }
+
       rigaDiv.appendChild(bloccoDiv);
     });
 
