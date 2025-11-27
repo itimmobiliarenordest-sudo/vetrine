@@ -168,12 +168,10 @@ function renderGriglia() {
 
         if (!immobile || immobile.prezzo === 0) {
           cella.classList.add('offline');
-          ${immobile.rif}<br>
           cella.innerHTML = "OFFLINE";
           countOffline++;
 
         } else if (immobile.segnaposto) {
-          ${immobile.rif}<br>
           cella.classList.add('segnaposto');
           cella.innerHTML = "SEGNAPOSTO";
 
