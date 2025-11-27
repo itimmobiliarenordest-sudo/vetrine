@@ -1,30 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Vetrine</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+    .box {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        background: #f3f3f3;
+    }
+</style>
+</head>
+<body>
+
+<h1>Stato Vetrine</h1>
+
+<div class="box">Totale immobili caricati: <strong id="totale">0</strong></div>
+
+<div class="box">
+    Portogruaro: <strong id="porto">0</strong><br>
+    San Vito: <strong id="sanvito">0</strong><br>
+    Pordenone: <strong id="pordenone">0</strong>
+</div>
+
 <script>
 async function caricaVetrine() {
-    const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
-    const json = await res.json();
 
-    if (!json.success) {
-        console.error("Errore:", json.message);
-        return;
+    try {
+        const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
+        const json = await res.json();
+
+        if (!json.success) {
+            alert("Errore: " + json.message);
+            return;
+        }
+
+        const immobili = json.data;
+
+        document.getElementById("totale").textContent = immobili.length;
+
+        const perAgenzia = {};
+
+        immobili.forEach(i => {
+            perAgenzia[i.agenzia] = (perAgenzia[i.agenzia] || 0) + 1;
+        });
+
+        document.getElementById("porto").textContent = perAgenzia["portogruaro"] || 0;
+        document.getElementById("sanvito").textContent = perAgenzia["sanvito"] || 0;
+        document.getElementById("pordenone").textContent = perAgenzia["pordenone"] || 0;
+
+    } catch (err) {
+        console.error("Errore fetch:", err);
+        alert("Impossibile caricare i dati dal Worker.");
     }
-
-    const immobili = json.data;
-
-    console.log("Immobili trovati:", immobili.length);
-
-    document.getElementById("totale").textContent = immobili.length;
-
-    // esempio conteggio per agenzia
-    const perAgenzia = {};
-
-    immobili.forEach(i => {
-        perAgenzia[i.agenzia] = (perAgenzia[i.agenzia] || 0) + 1;
-    });
-
-    document.getElementById("porto").textContent = perAgenzia["portogruaro"] || 0;
-    document.getElementById("sanvito").textContent = perAgenzia["sanvito"] || 0;
-    document.getElementById("pordenone").textContent = perAgenzia["pordenone"] || 0;
 }
 
 caricaVetrine();
 </script>
+
+</body>
+</html>
