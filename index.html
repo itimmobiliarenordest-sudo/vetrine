@@ -2,13 +2,13 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Vetrine asdad</title>
+<title>Dashboard Vetrine</title>
 <style>
   body { font-family: sans-serif; margin: 20px; }
-  .griglia { display: flex; flex-direction: column; gap: 15px; }
+  .griglia { display: flex; flex-direction: column; gap: 20px; }
   .riga { display: flex; gap: 5px; }
-  .blocco { display: flex; gap: 5px; }
-  .separatore { width: 20px; } /* spazio più spesso tra i blocchi */
+  .blocco { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
+  .nome-blocco { text-align: center; font-weight: bold; margin-bottom: 5px; }
   .cella { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #ccc; cursor: pointer; }
   .cella.offline { background-color: #eee; }
   .cella.segnaposto { background-color: #fff; }
@@ -20,7 +20,14 @@
 </head>
 <body>
 
-<h1>Portogruaro - Dashboard Vetrine</h1>
+<h1>Dashboard Vetrine</h1>
+
+<label for="selezionaAgenzia">Seleziona Agenzia:</label>
+<select id="selezionaAgenzia">
+  <option value="portogruaro">Portogruaro</option>
+  <option value="sanvito">San Vito</option>
+  <option value="pordenone">Pordenone</option>
+</select>
 
 <div class="griglia" id="griglia"></div>
 
@@ -31,21 +38,31 @@
 </div>
 
 <script>
-const blocchi = [4, 4, 3, 4, 5]; // numero colonne per ogni blocco
+const agenzieBlocchi = {
+  portogruaro: [4, 4, 3, 4, 5],
+  sanvito: [2, 2, 2],
+  pordenone: [3, 5]
+};
+
 const righe = 3;
+let immobili = [];
 
 const grigliaDiv = document.getElementById('griglia');
-let immobili = [];
+const selectAgenzia = document.getElementById('selezionaAgenzia');
 
 async function caricaVetrine() {
   const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
   const json = await res.json();
   if (!json.success) { console.error("Errore:", json.message); return; }
-  immobili = json.data.filter(i => i.agenzia === "portogruaro");
+  immobili = json.data;
   renderGriglia();
 }
 
 function renderGriglia() {
+  const agenzia = selectAgenzia.value;
+  const blocchi = agenzieBlocchi[agenzia];
+  const immobiliFiltrati = immobili.filter(i => i.agenzia === agenzia);
+
   grigliaDiv.innerHTML = '';
   let indice = 0;
   let countRibasso = 0;
@@ -59,8 +76,14 @@ function renderGriglia() {
       const blocco = document.createElement('div');
       blocco.classList.add('blocco');
 
+      // nome del blocco
+      const nomeBlocco = document.createElement('div');
+      nomeBlocco.classList.add('nome-blocco');
+      nomeBlocco.textContent = `VETRINA ${String.fromCharCode(65 + idx)}`; // A, B, C...
+      blocco.appendChild(nomeBlocco);
+
       for (let c = 0; c < colonne; c++) {
-        const immobile = immobili[indice];
+        const immobile = immobiliFiltrati[indice];
         const cella = document.createElement('div');
         cella.classList.add('cella');
 
@@ -90,7 +113,7 @@ function renderGriglia() {
           cella.appendChild(btn);
         }
 
-        // Toggle segnaposto al click
+        // Toggle segnaposto
         cella.addEventListener('click', () => {
           if (immobile) {
             immobile.segnaposto = !immobile.segnaposto;
@@ -102,23 +125,19 @@ function renderGriglia() {
         indice++;
       }
 
-      // separatore più spesso tra blocchi
-      if (idx < blocchi.length - 1) {
-        const sep = document.createElement('div');
-        sep.classList.add('separatore');
-        blocco.appendChild(sep);
-      }
-
       riga.appendChild(blocco);
     });
 
     grigliaDiv.appendChild(riga);
   }
 
-  document.getElementById('totale').textContent = immobili.length;
+  document.getElementById('totale').textContent = immobiliFiltrati.length;
   document.getElementById('ribassi').textContent = countRibasso;
   document.getElementById('offline').textContent = countOffline;
 }
+
+// cambia agenzia
+selectAgenzia.addEventListener('change', renderGriglia);
 
 caricaVetrine();
 </script>
