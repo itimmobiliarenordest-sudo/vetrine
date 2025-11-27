@@ -4,20 +4,61 @@
 <meta charset="UTF-8">
 <title>Dashboard Vetrine</title>
 <style>
-  body { font-family: sans-serif; margin: 20px; }
-  .griglia { display: flex; flex-direction: column; gap: 10px; }
-  .riga { display: flex; gap: 10px; }
-  .blocco { display: flex; gap: 5px; }
-  .cella {
-    width: 80px; height: 70px; border: 1px solid #ccc;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 12px; box-sizing: border-box; cursor: pointer; padding: 2px;
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: #f4f4f9; 
+    margin: 20px; 
+    color: #333;
   }
-  .cella.offline { background-color: #eee; }
-  .cella.segnaposto { background-color: #fff; }
-  .cella.ribasso { background-color: #ffdd57; }
-  .cella.normale { background-color: #a0e7a0; }
-  .conteggi { margin-top: 20px; }
+  h1 { text-align: center; color: #b35933; }
+  label { font-weight: bold; }
+  select { padding: 5px 10px; margin: 10px 0; font-size: 14px; }
+  
+  .griglia { display: flex; flex-direction: column; gap: 15px; }
+  .riga { display: flex; gap: 10px; }
+  .blocco {
+    display: flex; gap: 8px;
+    padding: 5px;
+    border-right: 3px solid #b35933;
+  }
+  .blocco:last-child { border-right: none; }
+  
+  .cella {
+    width: 90px; height: 80px; 
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 12px; box-sizing: border-box; cursor: pointer; padding: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .cella:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+  .cella.offline { background-color: #f0f0f0; color: #999; }
+  .cella.segnaposto { background-color: #fff3e0; color: #555; }
+  .cella.ribasso { background-color: #ffeb99; color: #555; }
+  .cella.normale { background-color: #a0e7a0; color: #333; }
+
+  button {
+    margin-top: 4px; 
+    font-size: 10px; 
+    padding: 2px 5px; 
+    border: none; 
+    border-radius: 5px; 
+    background-color: #b35933; 
+    color: white; 
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  button:hover { background-color: #8b0a25; }
+
+  .conteggi { 
+    margin-top: 20px; 
+    font-weight: bold;
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    font-size: 14px;
+  }
 </style>
 </head>
 <body>
@@ -34,9 +75,9 @@
 <div class="griglia" id="griglia"></div>
 
 <div class="conteggi">
-  <p>Cartelli totali: <span id="totale">0</span></p>
-  <p>Ribassi da fare: <span id="ribassi">0</span></p>
-  <p>Offline: <span id="offline">0</span></p>
+  <div>Cartelli totali: <span id="totale">0</span></div>
+  <div>Ribassi da fare: <span id="ribassi">0</span></div>
+  <div>Offline: <span id="offline">0</span></div>
 </div>
 
 <script>
@@ -97,7 +138,7 @@ function renderGriglia() {
           } else {
             cella.classList.add('normale');
           }
-          cella.innerHTML = `Rif ${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
+          cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
         // Pulsante ribasso
