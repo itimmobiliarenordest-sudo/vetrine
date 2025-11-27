@@ -21,37 +21,8 @@
     margin-top: 20px;
   }
 
-  /* NUOVO STILE SELECT */
-  label { 
-    font-weight: bold; 
-    color: #4c565c;
-    margin-right: 10px;
-  }
-  select { 
-    padding: 8px 15px; 
-    margin: 10px 0; 
-    font-size: 16px; 
-    border: 2px solid #b30933; 
-    border-radius: 8px; 
-    background-color: white; 
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    /* Freccia SVG personalizzata per l'icona */
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b30933' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 30px; 
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-
-  select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-    outline: none;
-  }
-  /* FINE NUOVO STILE SELECT */
+  label { font-weight: bold; }
+  select { padding: 5px 10px; margin: 10px 0; font-size: 14px; }
   
   /* Stile per il campo di ricerca */
   .cerca-container {
@@ -108,8 +79,8 @@
 
   /* Classi per stato */
   .cella.offline { 
-    background-color: #fce8e8; 
-    color: #b30933; 
+    background-color: #fce8e8; /* Rosso/Rosa molto chiaro */
+    color: #b30933; /* Rosso scuro, come il tuo H1 */
     font-weight: bold;
   }
   .cella.segnaposto { background-color: #87A0CC; color: white; }
@@ -204,14 +175,12 @@
 
 <h1>Dashboard Vetrine</h1>
 
-<div>
-  <label for="selezionaAgenzia">Seleziona Agenzia:</label>
-  <select id="selezionaAgenzia">
-    <option value="portogruaro">Portogruaro</option>
-    <option value="sanvito">San Vito</option>
-    <option value="pordenone">Pordenone</option>
-  </select>
-</div>
+<label for="selezionaAgenzia">Seleziona Agenzia:</label>
+<select id="selezionaAgenzia">
+  <option value="portogruaro">Portogruaro</option>
+  <option value="sanvito">San Vito</option>
+  <option value="pordenone">Pordenone</option>
+</select>
 
 <div class="griglia" id="griglia"></div>
 
@@ -242,33 +211,7 @@ const bottoneCerca = document.getElementById('bottoneCerca');
 
 let rifDaCercare = '';
 
-// NUOVA FUNZIONE: Legge il parametro 'agenzia' dall'URL
-function getAgenziaFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('agenzia'); 
-}
-
-// NUOVA FUNZIONE: Reindirizza la pagina con il parametro URL aggiornato
-function cambiaAgenziaConUrl() {
-    const nuovaAgenzia = selectAgenzia.value;
-    const currentUrl = new URL(window.location.href);
-    
-    // Imposta il nuovo parametro 'agenzia' nell'URL
-    currentUrl.searchParams.set('agenzia', nuovaAgenzia);
-    
-    // Ricarica la pagina con il nuovo URL per applicare il filtro
-    window.location.href = currentUrl.toString();
-}
-
 async function caricaVetrine() {
-  // 1. Legge il valore dall'URL e imposta il selettore
-  const agenziaUrl = getAgenziaFromUrl();
-  if (agenziaUrl && selectAgenzia.options[selectAgenzia.selectedIndex].value !== agenziaUrl) {
-    // Controlla se il valore dell'URL è diverso dal valore di default o selezionato
-    selectAgenzia.value = agenziaUrl;
-  }
-
-  // 2. Chiamata API (la tua logica originale)
   try {
     const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
     const json = await res.json();
@@ -282,7 +225,6 @@ async function caricaVetrine() {
 }
 
 function renderGriglia() {
-  // L'agenzia viene letta dal valore della select, che è stato impostato dall'URL o dall'utente
   const agenzia = selectAgenzia.value;
   const blocchi = agenzieBlocchi[agenzia];
   const immobiliFiltrati = immobili.filter(i => i.agenzia === agenzia); 
@@ -330,4 +272,92 @@ function renderGriglia() {
             countRibasso++;
             cella.innerHTML = `
               <div class="prezzo-vecchio">${immobile.prezzo} €</div>
-              <div class="prezzo-nuovo">↓ ${immobile.prezzo_myagency
+              <div class="prezzo-nuovo">↓ ${immobile.prezzo_myagency} €</div>
+              <div class="comune">${immobile.comune}</div>
+            `;
+          } else {
+            cella.classList.add('normale');
+            cella.innerHTML = `
+              <div class="rif">${immobile.rif}</div>
+              <div class="prezzo-nuovo">${immobile.prezzo} €</div>
+              <div class="comune">${immobile.comune}</div>
+            `;
+          }
+        }
+        
+        // LOGICA DI EVIDENZIAZIONE
+        if (immobile && immobile.rif && rifDaCercare && immobile.rif.toLowerCase() === rifDaCercare.toLowerCase()) {
+            cella.classList.add('evidenziato');
+            setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+
+        // AGGIORNATA: Aggiungi pulsante Ribasso SOLO se non è segnaposto E c'è un ribasso E il prezzo_myagency è > 0
+        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0 && immobile.prezzo_myagency < immobile.prezzo) {
+          const btn = document.createElement('button');
+          btn.textContent = "Ribasso";
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
+              immobile.prezzo = immobile.prezzo_myagency;
+              renderGriglia();
+            }
+          });
+          cella.appendChild(btn);
+        }
+        
+        // Logica click per segnaposto
+        if (immobile) {
+            cella.addEventListener('click', () => {
+                
+                // 1. Blocco se è un cartello di Ribasso (giallo) e non è già un segnaposto
+                const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
+                if (isRibasso && !immobile.segnaposto) {
+                    return; 
+                }
+                
+                // 2. Chiedi conferma per TUTTI gli altri
+                if (confirm(`Confermi la modifica di stato per il cartello ${immobile.rif}?`)) {
+                    immobile.segnaposto = !immobile.segnaposto;
+                    renderGriglia();
+                }
+            });
+        }
+
+        bloccoDiv.appendChild(cella);
+        indice++;
+      }
+
+      rigaDiv.appendChild(bloccoDiv);
+    });
+
+    grigliaDiv.appendChild(rigaDiv);
+  }
+
+  document.getElementById('totale').textContent = immobiliFiltrati.length;
+  document.getElementById('ribassi').textContent = countRibasso;
+  document.getElementById('offline').textContent = countOffline;
+}
+
+function gestisciRicerca() {
+    const valore = inputRicerca.value.trim();
+    rifDaCercare = valore.toLowerCase(); 
+    
+    if (rifDaCercare) {
+        inputRicerca.value = rifDaCercare.toUpperCase();
+    }
+    
+    renderGriglia(); 
+}
+
+selectAgenzia.addEventListener('change', renderGriglia);
+bottoneCerca.addEventListener('click', gestisciRicerca);
+inputRicerca.addEventListener('keypress', (e) => { 
+    if (e.key === 'Enter') {
+        gestisciRicerca();
+    }
+});
+caricaVetrine();
+</script>
+
+</body>
+</html>
