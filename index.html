@@ -2,220 +2,193 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Vetrine</title>
 <style>
-  html, body {
-    height: 100%;
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f4f4f9;
+body {
+    font-family: 'Segoe UI', sans-serif;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-  }
-
-  h1 {
-    text-align: center;
-    color: #b35933;
-    margin-top: 20px;
-  }
-
-  label { font-weight: bold; }
-  select { padding: 5px 10px; margin: 10px 0; font-size: 14px; }
-
-  .griglia {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-  }
-
-  .riga { display: flex; gap: 10px; justify-content: center; }
-
-  .blocco {
-    display: flex;
-    gap: 8px;
-    padding: 5px;
-    border-right: 3px solid #b35933;
-    transition: transform 0.3s;
-  }
-
-  .blocco:last-child { border-right: none; }
-
-  .cella {
-    width: 90px; height: 80px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    font-size: 12px;
-    box-sizing: border-box;
-    cursor: pointer;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f0f2f5;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.griglia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.cella {
+    width: 100px;
+    min-height: 100px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     padding: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
     text-align: center;
-  }
+    transition: transform 0.3s, background-color 0.3s;
+}
 
-  .cella:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
+.cella:hover {
+    transform: scale(1.05);
+}
 
-  .cella.offline { background-color: #f0f0f0; color: #999; }
-  .cella.segnaposto { background-color: #fff3e0; color: #555; }
-  .cella.ribasso { background-color: #ffeb99; color: #555; }
-  .cella.normale { background-color: #a0e7a0; color: #333; }
+.cella.ribasso {
+    background-color: #fff176; /* giallo chiaro */
+}
 
-  button {
+.cella.offline {
+    background-color: #e0e0e0;
+}
+
+.cella.segnaposto {
+    background-color: #90caf9; /* azzurro */
+}
+
+button {
     margin-top: 4px;
     font-size: 10px;
     padding: 2px 5px;
     border: none;
     border-radius: 5px;
-    background-color: #b35933;
+    background-color: #ffb74d; /* giallo/arancione */
     color: white;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.3s;
-  }
+}
 
-  button:hover { background-color: #8b0a25; transform: scale(1.1); }
+button:hover { 
+    background-color: #ffa726; 
+    transform: scale(1.1); 
+}
 
-  .conteggi {
-    margin-top: 20px;
-    font-weight: bold;
-    display: flex;
-    gap: 30px;
-    justify-content: center;
-    font-size: 14px;
-  }
-
-  /* Animazioni per cambio stato */
-  .fade {
-    animation: fadeIn 0.4s ease-in-out;
-  }
-
-  @keyframes fadeIn {
-    0% { opacity: 0; transform: scale(0.9); }
-    100% { opacity: 1; transform: scale(1); }
-  }
+input.rif-input {
+    width: 60px;
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 4px;
+}
 </style>
 </head>
 <body>
-
-<h1>Dashboard Vetrine</h1>
-
-<label for="selezionaAgenzia">Seleziona Agenzia:</label>
-<select id="selezionaAgenzia">
-  <option value="portogruaro">Portogruaro</option>
-  <option value="sanvito">San Vito</option>
-  <option value="pordenone">Pordenone</option>
-</select>
-
-<div class="griglia" id="griglia"></div>
-
-<div class="conteggi">
-  <div>Cartelli totali: <span id="totale">0</span></div>
-  <div>Ribassi da fare: <span id="ribassi">0</span></div>
-  <div>Offline: <span id="offline">0</span></div>
+<div class="container">
+    <select id="selettore-agenzia">
+        <option value="portogruaro">Portogruaro</option>
+        <option value="sanvito">San Vito</option>
+        <option value="pordenone">Pordenone</option>
+    </select>
+    <div id="totale-cartelli">Totale cartelli: <span id="totale">0</span></div>
+    <div class="griglia" id="griglia"></div>
 </div>
 
 <script>
-const agenzieBlocchi = {
-  portogruaro: [4, 4, 3, 4, 5],
-  sanvito: [2, 2, 2],
-  pordenone: [3, 5]
+const agenzieStruttura = {
+    portogruaro: [4,4,3,4,5],
+    sanvito: [2,2,2],
+    pordenone: [3,5]
 };
-const righe = 3;
-let immobili = [];
 
-const grigliaDiv = document.getElementById('griglia');
-const selectAgenzia = document.getElementById('selezionaAgenzia');
+const colori = {
+    ribasso: 'ribasso',
+    segnaposto: 'segnaposto',
+    offline: 'offline'
+};
+
+let jsonData = [];
 
 async function caricaVetrine() {
-  const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
-  const json = await res.json();
-  if (!json.success) { console.error("Errore:", json.message); return; }
-  immobili = json.data;
-  renderGriglia();
+    const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
+    const json = await res.json();
+    if (!json.success) return;
+
+    jsonData = json.data;
+    renderGriglia();
 }
 
 function renderGriglia() {
-  const agenzia = selectAgenzia.value;
-  const blocchi = agenzieBlocchi[agenzia];
-  const immobiliFiltrati = immobili.filter(i => i.agenzia === agenzia);
+    const agenzia = document.getElementById("selettore-agenzia").value;
+    const struttura = agenzieStruttura[agenzia];
+    const griglia = document.getElementById("griglia");
+    griglia.innerHTML = "";
 
-  grigliaDiv.innerHTML = '';
-  let indice = 0;
-  let countRibasso = 0;
-  let countOffline = 0;
+    const immobiliAgenzia = jsonData.filter(i => i.agenzia === agenzia);
+    document.getElementById("totale").textContent = immobiliAgenzia.length;
 
-  for (let r = 0; r < righe; r++) {
-    const rigaDiv = document.createElement('div');
-    rigaDiv.classList.add('riga');
+    let index = 0;
+    struttura.forEach((colonne, idxVetrina) => {
+        for(let r=0; r<3; r++) { // 3 righe fisse
+            const riga = document.createElement('div');
+            riga.style.display = 'flex';
+            riga.style.gap = '8px';
+            for(let c=0; c<colonne; c++) {
+                const cella = document.createElement('div');
+                cella.className = 'cella';
+                const immobile = immobiliAgenzia[index] || null;
 
-    blocchi.forEach((colonne) => {
-      const bloccoDiv = document.createElement('div');
-      bloccoDiv.classList.add('blocco');
+                if (!immobile) {
+                    cella.classList.add(colori.offline);
+                } else {
+                    if (immobile.segnaposto) cella.classList.add(colori.segnaposto);
+                    else if (immobile.prezzo_myagency < immobile.prezzo) cella.classList.add(colori.ribasso);
 
-      for (let c = 0; c < colonne; c++) {
-        const immobile = immobiliFiltrati[indice];
-        const cella = document.createElement('div');
-        cella.classList.add('cella', 'fade');
+                    const inputRif = document.createElement('input');
+                    inputRif.value = immobile ? immobile.rif : '';
+                    inputRif.className = 'rif-input';
+                    inputRif.addEventListener('change', () => {
+                        if(immobile) immobile.rif = inputRif.value;
+                    });
+                    cella.appendChild(inputRif);
 
-        if (!immobile || immobile.prezzo === 0) {
-          cella.classList.add('offline');
-          cella.innerHTML = "OFFLINE";
-          countOffline++;
-        } else if (immobile.segnaposto) {
-          cella.classList.add('segnaposto');
-          cella.innerHTML = "SEGNAPOSTO";
-        } else {
-          if (immobile.prezzo_myagency < immobile.prezzo) {
-            cella.classList.add('ribasso');
-            countRibasso++;
-          } else {
-            cella.classList.add('normale');
-          }
-          cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
-        }
+                    const prezzo = document.createElement('div');
+                    prezzo.textContent = immobile ? immobile.prezzo_myagency : '';
+                    cella.appendChild(prezzo);
 
-        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0) {
-          const btn = document.createElement('button');
-          btn.textContent = "Ribasso";
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
-              immobile.prezzo_myagency = Math.round(immobile.prezzo_myagency * 0.95);
-              renderGriglia();
+                    const comune = document.createElement('div');
+                    comune.textContent = immobile ? immobile.comune : '';
+                    cella.appendChild(comune);
+
+                    if (immobile && cella.classList.contains('ribasso')) {
+                        const btn = document.createElement('button');
+                        btn.textContent = "Ribasso";
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            immobile.prezzo_myagency = Math.round(immobile.prezzo_myagency * 0.95);
+                            renderGriglia();
+                        });
+                        cella.appendChild(btn);
+                    }
+                }
+
+                riga.appendChild(cella);
+                index++;
             }
-          });
-          cella.appendChild(btn);
+            griglia.appendChild(riga);
         }
-
-        cella.addEventListener('click', () => {
-          if (immobile) {
-            immobile.segnaposto = !immobile.segnaposto;
-            renderGriglia();
-          }
-        });
-
-        bloccoDiv.appendChild(cella);
-        indice++;
-      }
-      rigaDiv.appendChild(bloccoDiv);
+        // separatore più spesso tra vetrine
+        const sep = document.createElement('div');
+        sep.style.height = '12px';
+        griglia.appendChild(sep);
     });
-
-    grigliaDiv.appendChild(rigaDiv);
-  }
-
-  document.getElementById('totale').textContent = immobiliFiltrati.length;
-  document.getElementById('ribassi').textContent = countRibasso;
-  document.getElementById('offline').textContent = countOffline;
 }
 
-selectAgenzia.addEventListener('change', renderGriglia);
+document.getElementById("selettore-agenzia").addEventListener('change', renderGriglia);
+
 caricaVetrine();
 </script>
-
 </body>
 </html>
