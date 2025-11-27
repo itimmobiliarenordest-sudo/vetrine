@@ -181,9 +181,11 @@ function renderGriglia() {
           cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
-        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0) {
+        // Mostra il pulsante Ribasso SOLO se la cella è gialla (ribasso)
+        if (immobile && cella.classList.contains('ribasso')) {
           const btn = document.createElement('button');
           btn.textContent = "Ribasso";
+        
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
@@ -191,8 +193,10 @@ function renderGriglia() {
               renderGriglia();
             }
           });
+        
           cella.appendChild(btn);
         }
+
 
         cella.addEventListener('click', () => {
           if (immobile) {
