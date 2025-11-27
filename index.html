@@ -183,8 +183,8 @@ function renderGriglia() {
             countRibasso++;
 
             cella.innerHTML = `
-              <s>${immobile.prezzo} €</s>↓<br>
-              <b>${immobile.prezzo_myagency} €</b><br>
+              <s>${immobile.prezzo} €</s><br>
+              <b>↓ ${immobile.prezzo_myagency} €</b><br>
               ${immobile.comune}
             `;
           } else {
