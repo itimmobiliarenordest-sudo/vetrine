@@ -78,7 +78,11 @@
   .cella:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
 
   /* Classi per stato */
-  .cella.offline { background-color: #f0f0f0; color: #999; }
+  .cella.offline { 
+    background-color: #fce8e8; /* Rosso/Rosa molto chiaro */
+    color: #b30933; /* Rosso scuro, come il tuo H1 */
+    font-weight: bold;
+  }
   .cella.segnaposto { background-color: #87A0CC; color: white; }
   .cella.ribasso { background-color: #ffeb99; color: #555; }
   .cella.normale { background-color: #a0e7a0; color: #333; }
@@ -250,6 +254,7 @@ function renderGriglia() {
         const cella = document.createElement('div');
         cella.classList.add('cella', 'fade');
 
+        // LOGICA OFFLINE: Se l'immobile non esiste O se il prezzo MyAgency è 0
         if (!immobile || immobile.prezzo_myagency === 0) {
           cella.classList.add('offline');
           cella.textContent = "OFFLINE";
@@ -286,8 +291,8 @@ function renderGriglia() {
             setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
         }
 
-        // Aggiungi pulsante Ribasso SOLO se non è segnaposto e c'è un ribasso
-        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency < immobile.prezzo) {
+        // AGGIORNATA: Aggiungi pulsante Ribasso SOLO se non è segnaposto E c'è un ribasso E il prezzo_myagency è > 0
+        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0 && immobile.prezzo_myagency < immobile.prezzo) {
           const btn = document.createElement('button');
           btn.textContent = "Ribasso";
           btn.addEventListener('click', (e) => {
@@ -300,17 +305,17 @@ function renderGriglia() {
           cella.appendChild(btn);
         }
         
-        // NUOVA LOGICA CLICK PER SEGNAPOSTO
+        // Logica click per segnaposto
         if (immobile) {
             cella.addEventListener('click', () => {
                 
                 // 1. Blocco se è un cartello di Ribasso (giallo) e non è già un segnaposto
                 const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
                 if (isRibasso && !immobile.segnaposto) {
-                    return; // Non fa nulla sul click del giallo se è in stato "Ribasso da fare"
+                    return; 
                 }
                 
-                // 2. Chiedi conferma per TUTTI gli altri (Normale, Offline, o per TOGLIERE il segnaposto)
+                // 2. Chiedi conferma per TUTTI gli altri
                 if (confirm(`Confermi la modifica di stato per il cartello ${immobile.rif}?`)) {
                     immobile.segnaposto = !immobile.segnaposto;
                     renderGriglia();
