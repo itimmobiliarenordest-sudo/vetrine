@@ -5,15 +5,18 @@
 <title>Dashboard Vetrine</title>
 <style>
   body { font-family: sans-serif; margin: 20px; }
-  .griglia { display: flex; flex-direction: column; gap: 20px; }
+  .griglia { display: flex; flex-direction: column; gap: 10px; }
   .riga { display: flex; gap: 10px; }
-  .blocco { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
-  .cella { width: 100px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #ccc; cursor: pointer; padding: 2px; font-size: 12px; box-sizing: border-box; }
+  .blocco { display: flex; gap: 5px; }
+  .cella {
+    width: 80px; height: 70px; border: 1px solid #ccc;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 12px; box-sizing: border-box; cursor: pointer; padding: 2px;
+  }
   .cella.offline { background-color: #eee; }
   .cella.segnaposto { background-color: #fff; }
   .cella.ribasso { background-color: #ffdd57; }
   .cella.normale { background-color: #a0e7a0; }
-  button { font-size: 10px; padding: 2px 5px; margin-top: 2px; }
   .conteggi { margin-top: 20px; }
 </style>
 </head>
@@ -68,12 +71,12 @@ function renderGriglia() {
   let countOffline = 0;
 
   for (let r = 0; r < righe; r++) {
-    const riga = document.createElement('div');
-    riga.classList.add('riga');
+    const rigaDiv = document.createElement('div');
+    rigaDiv.classList.add('riga');
 
-    blocchi.forEach((colonne) => {
-      const blocco = document.createElement('div');
-      blocco.classList.add('blocco');
+    blocchi.forEach((colonne, bloccoIdx) => {
+      const bloccoDiv = document.createElement('div');
+      bloccoDiv.classList.add('blocco');
 
       for (let c = 0; c < colonne; c++) {
         const immobile = immobiliFiltrati[indice];
@@ -94,8 +97,7 @@ function renderGriglia() {
           } else {
             cella.classList.add('normale');
           }
-          // Info cartello
-          cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
+          cella.innerHTML = `Rif ${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
         // Pulsante ribasso
@@ -120,14 +122,14 @@ function renderGriglia() {
           }
         });
 
-        blocco.appendChild(cella);
+        bloccoDiv.appendChild(cella);
         indice++;
       }
 
-      riga.appendChild(blocco);
+      rigaDiv.appendChild(bloccoDiv);
     });
 
-    grigliaDiv.appendChild(riga);
+    grigliaDiv.appendChild(rigaDiv);
   }
 
   document.getElementById('totale').textContent = immobiliFiltrati.length;
