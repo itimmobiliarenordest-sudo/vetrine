@@ -6,97 +6,107 @@
 <title>Dashboard Vetrine</title>
 <style>
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f0f2f5;
+    margin: 0;
     padding: 20px;
-    background: #f5f5f5;
 }
 
-select {
-    padding: 6px 10px;
-    font-size: 16px;
-    margin-bottom: 20px;
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
 }
 
 .griglia {
     display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
-
-/* Ogni blocco vetrina (es: 4 | 4 | 3 | 4 | 5) */
-.vetrina {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-bottom: 20px;
-    border-bottom: 4px solid #ccc;
-}
-
-.riga {
-    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
 .cella {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    min-height: 100px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    padding: 5px;
     text-align: center;
-    font-size: 14px;
+    transition: transform 0.3s, background-color 0.3s;
+}
+
+.cella:hover {
+    transform: scale(1.05);
 }
 
 .cella.ribasso {
-    background-color: #ffec80;
-}
-
-.cella.segnaposto {
-    background-color: #a8d0ff;
+    background-color: #fff176; /* giallo chiaro */
 }
 
 .cella.offline {
-    background-color: #d8d8d8;
+    background-color: #e0e0e0;
 }
 
-button.ribasso-btn {
-    margin-top: 5px;
-    background-color: #ffae42;
+.cella.segnaposto {
+    background-color: #90caf9; /* azzurro */
+}
+
+button {
+    margin-top: 4px;
+    font-size: 10px;
+    padding: 2px 5px;
     border: none;
-    padding: 4px 6px;
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: 5px;
+    background-color: #ffb74d; /* giallo/arancione */
     color: white;
-    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+button:hover { 
+    background-color: #ffa726; 
+    transform: scale(1.1); 
 }
 
 input.rif-input {
-    width: 80%;
+    width: 60px;
     font-size: 12px;
     text-align: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 </style>
 </head>
 <body>
-
-<select id="selettore-agenzia">
-    <option value="portogruaro">Portogruaro</option>
-    <option value="sanvito">San Vito</option>
-    <option value="pordenone">Pordenone</option>
-</select>
-
-<div class="griglia" id="griglia"></div>
+<div class="container">
+    <select id="selettore-agenzia">
+        <option value="portogruaro">Portogruaro</option>
+        <option value="sanvito">San Vito</option>
+        <option value="pordenone">Pordenone</option>
+    </select>
+    <div id="totale-cartelli">Totale cartelli: <span id="totale">0</span></div>
+    <div class="griglia" id="griglia"></div>
+</div>
 
 <script>
 const agenzieStruttura = {
     portogruaro: [4,4,3,4,5],
     sanvito: [2,2,2],
     pordenone: [3,5]
+};
+
+const colori = {
+    ribasso: 'ribasso',
+    segnaposto: 'segnaposto',
+    offline: 'offline'
 };
 
 let jsonData = [];
@@ -116,51 +126,50 @@ function renderGriglia() {
     const griglia = document.getElementById("griglia");
     griglia.innerHTML = "";
 
-    const immobili = jsonData.filter(i => i.agenzia === agenzia);
+    const immobiliAgenzia = jsonData.filter(i => i.agenzia === agenzia);
+    document.getElementById("totale").textContent = immobiliAgenzia.length;
+
     let index = 0;
+    struttura.forEach((colonne, idxVetrina) => {
+        for(let r=0; r<3; r++) { // 3 righe fisse
+            const riga = document.createElement('div');
+            riga.style.display = 'flex';
+            riga.style.gap = '8px';
+            for(let c=0; c<colonne; c++) {
+                const cella = document.createElement('div');
+                cella.className = 'cella';
+                const immobile = immobiliAgenzia[index] || null;
 
-    struttura.forEach(colonne => {
-        const blocco = document.createElement("div");
-        blocco.className = "vetrina";
-
-        for (let r = 0; r < 3; r++) {
-            const riga = document.createElement("div");
-            riga.className = "riga";
-
-            for (let c = 0; c < colonne; c++) {
-                const cella = document.createElement("div");
-                cella.className = "cella";
-
-                const imm = immobili[index] || null;
-
-                if (!imm) {
-                    cella.classList.add("offline");
+                if (!immobile) {
+                    cella.classList.add(colori.offline);
                 } else {
-                    if (imm.segnaposto) cella.classList.add("segnaposto");
-                    else if (imm.prezzo_myagency < imm.prezzo) cella.classList.add("ribasso");
+                    if (immobile.segnaposto) cella.classList.add(colori.segnaposto);
+                    else if (immobile.prezzo_myagency < immobile.prezzo) cella.classList.add(colori.ribasso);
 
-                    const inputRif = document.createElement("input");
-                    inputRif.className = "rif-input";
-                    inputRif.value = imm.rif ?? "";
-                    inputRif.addEventListener("change", () => imm.rif = inputRif.value);
+                    const inputRif = document.createElement('input');
+                    inputRif.value = immobile ? immobile.rif : '';
+                    inputRif.className = 'rif-input';
+                    inputRif.addEventListener('change', () => {
+                        if(immobile) immobile.rif = inputRif.value;
+                    });
                     cella.appendChild(inputRif);
 
-                    const prezzo = document.createElement("div");
-                    prezzo.textContent = imm.prezzo_myagency;
+                    const prezzo = document.createElement('div');
+                    prezzo.textContent = immobile ? immobile.prezzo_myagency : '';
                     cella.appendChild(prezzo);
 
-                    const comune = document.createElement("div");
-                    comune.textContent = imm.comune;
+                    const comune = document.createElement('div');
+                    comune.textContent = immobile ? immobile.comune : '';
                     cella.appendChild(comune);
 
-                    if (cella.classList.contains("ribasso")) {
-                        const btn = document.createElement("button");
+                    if (immobile && cella.classList.contains('ribasso')) {
+                        const btn = document.createElement('button');
                         btn.textContent = "Ribasso";
-                        btn.className = "ribasso-btn";
-                        btn.onclick = () => {
-                            imm.prezzo_myagency = Math.round(imm.prezzo_myagency * 0.95);
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            immobile.prezzo_myagency = Math.round(immobile.prezzo_myagency * 0.95);
                             renderGriglia();
-                        };
+                        });
                         cella.appendChild(btn);
                     }
                 }
@@ -168,18 +177,18 @@ function renderGriglia() {
                 riga.appendChild(cella);
                 index++;
             }
-
-            blocco.appendChild(riga);
+            griglia.appendChild(riga);
         }
-
-        griglia.appendChild(blocco);
+        // separatore più spesso tra vetrine
+        const sep = document.createElement('div');
+        sep.style.height = '12px';
+        griglia.appendChild(sep);
     });
 }
 
-document.getElementById("selettore-agenzia").addEventListener("change", renderGriglia);
+document.getElementById("selettore-agenzia").addEventListener('change', renderGriglia);
 
 caricaVetrine();
 </script>
-
 </body>
 </html>
