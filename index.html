@@ -12,6 +12,7 @@
   .ribasso { background-color: #ffecb3; } /* giallo per ribasso */
   .segnaposto { background-color: #e0e0e0; } /* grigio chiaro */
   button { padding: 4px 8px; cursor: pointer; }
+  #conteggi { margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -19,40 +20,35 @@
 <h1>Dashboard Vetrine</h1>
 
 <div>
-    <label for="agenziaFilter">Filtra per agenzia: </label>
+    <label for="agenziaFilter">Seleziona agenzia: </label>
     <select id="agenziaFilter">
-        <option value="tutte">Tutte</option>
+        <option value="">-- Scegli Agenzia --</option>
         <option value="portogruaro">Portogruaro</option>
         <option value="sanvito">San Vito</option>
         <option value="pordenone">Pordenone</option>
     </select>
 </div>
 
-<div>
-    <p>Totale immobili: <span id="totale">0</span></p>
-    <p>Portogruaro: <span id="porto">0</span></p>
-    <p>San Vito: <span id="sanvito">0</span></p>
-    <p>Pordenone: <span id="pordenone">0</span></p>
+<div id="conteggi" style="display:none;">
+    <p>Totale cartelli: <span id="totale">0</span></p>
+    <p>Ribassi da fare: <span id="ribassi">0</span></p>
+    <p>Offline (segnaposto): <span id="offline">0</span></p>
 </div>
 
-<table id="vetrinaTable">
+<table id="vetrinaTable" style="display:none;">
   <thead>
     <tr>
       <th>Rif</th>
       <th>Prezzo</th>
       <th>Prezzo MyAgency</th>
       <th>Comune</th>
-      <th>Agenzia</th>
       <th>Vetrina</th>
-      <th>Timestamp</th>
       <th>Segnaposto</th>
       <th>Ribasso</th>
       <th>Cambia</th>
     </tr>
   </thead>
-  <tbody>
-    <!-- righe generate dinamicamente -->
-  </tbody>
+  <tbody></tbody>
 </table>
 
 <script>
@@ -68,46 +64,44 @@ async function caricaVetrine() {
     }
 
     immobiliGlobal = json.data;
-    aggiornaTabella("tutte");
-    aggiornaConteggi();
 }
 
-function aggiornaConteggi() {
-    const perAgenzia = {};
-    immobiliGlobal.forEach(i => {
-        perAgenzia[i.agenzia] = (perAgenzia[i.agenzia] || 0) + 1;
-    });
-
-    document.getElementById("totale").textContent = immobiliGlobal.length;
-    document.getElementById("porto").textContent = perAgenzia["portogruaro"] || 0;
-    document.getElementById("sanvito").textContent = perAgenzia["sanvito"] || 0;
-    document.getElementById("pordenone").textContent = perAgenzia["pordenone"] || 0;
-}
-
-function aggiornaTabella(filtro) {
+function aggiornaTabella(agenzia) {
     const tbody = document.querySelector("#vetrinaTable tbody");
     tbody.innerHTML = "";
 
-    const filtrati = filtro === "tutte" ? immobiliGlobal : immobiliGlobal.filter(i => i.agenzia === filtro);
+    if (!agenzia) return;
+
+    const filtrati = immobiliGlobal.filter(i => i.agenzia === agenzia);
+    let ribassiCount = 0;
+    let offlineCount = 0;
 
     filtrati.forEach(i => {
         const tr = document.createElement("tr");
-        tr.className = i.segnaposto ? "segnaposto" : "normale";
+        tr.className = i.segnaposto ? "segnaposto" : (i.prezzo_myagency < i.prezzo ? "ribasso" : "normale");
+
+        if (!i.segnaposto && i.prezzo_myagency < i.prezzo) ribassiCount++;
+        if (i.segnaposto) offlineCount++;
 
         tr.innerHTML = `
             <td>${i.rif}</td>
             <td>${i.prezzo}</td>
             <td>${i.prezzo_myagency}</td>
             <td>${i.comune}</td>
-            <td>${i.agenzia}</td>
             <td>${i.vetrina}</td>
-            <td>${i.timestamp}</td>
             <td>${i.segnaposto ? "✔" : ""}</td>
             <td>${!i.segnaposto ? `<button onclick="ribassa(${i.id})">Ribassa</button>` : ""}</td>
             <td><button onclick="cambia(${i.id})">Cambia</button></td>
         `;
         tbody.appendChild(tr);
     });
+
+    document.getElementById("totale").textContent = filtrati.length;
+    document.getElementById("ribassi").textContent = ribassiCount;
+    document.getElementById("offline").textContent = offlineCount;
+
+    document.getElementById("conteggi").style.display = filtrati.length ? "block" : "none";
+    document.getElementById("vetrinaTable").style.display = filtrati.length ? "table" : "none";
 }
 
 function ribassa(id) {
