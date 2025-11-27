@@ -44,7 +44,7 @@
   .blocco:last-child { border-right: none; }
 
   .cella {
-    width: 90px; height: 80px;
+    width: 110px; height: 110px;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -72,16 +72,17 @@
     padding: 2px 5px;
     border: none;
     border-radius: 5px;
-    background-color: #ffb74d;
+    background-color: #ff9800;
     color: white;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.3s;
   }
 
   button:hover { 
-      background-color: #ffa726; 
+      background-color: #fb8c00; 
       transform: scale(1.1); 
   }
+
   .conteggi {
     margin-top: 20px;
     font-weight: bold;
@@ -91,7 +92,6 @@
     font-size: 14px;
   }
 
-  /* Animazioni per cambio stato */
   .fade {
     animation: fadeIn 0.4s ease-in-out;
   }
@@ -164,39 +164,60 @@ function renderGriglia() {
         const cella = document.createElement('div');
         cella.classList.add('cella', 'fade');
 
-        if (!immobile || immobile.prezzo === 0) {
+        if (!immobile || immobile.prezzo_myagency === 0) {
           cella.classList.add('offline');
           cella.innerHTML = "OFFLINE";
           countOffline++;
-        } else if (immobile.segnaposto) {
+        } 
+        else if (immobile.segnaposto) {
           cella.classList.add('segnaposto');
-          cella.innerHTML = "SEGNAPOSTO";
-        } else {
-          if (immobile.prezzo_myagency < immobile.prezzo) {
+          cella.innerHTML = `
+            SEGNAPOSTO<br>
+            <input style="margin-top:4px;width:80%" value="${immobile.rif}">
+          `;
+        }
+        else {
+          const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
+
+          if (isRibasso) {
             cella.classList.add('ribasso');
             countRibasso++;
+            cella.innerHTML = `
+              <s>${immobile.prezzo} €</s><br>
+              ↓<br>
+              <b>${immobile.prezzo_myagency} €</b><br>
+              ${immobile.comune}<br>
+              <input style="margin-top:4px;width:80%" value="${immobile.rif}">
+            `;
           } else {
             cella.classList.add('normale');
+            cella.innerHTML = `
+              ${immobile.rif}<br>
+              ${immobile.prezzo_myagency} €<br>
+              ${immobile.comune}<br>
+              <input style="margin-top:4px;width:80%" value="${immobile.rif}">
+            `;
           }
-          cella.innerHTML = `${immobile.rif}<br>${immobile.prezzo_myagency}<br>${immobile.comune}`;
         }
 
-        // Mostra il pulsante Ribasso SOLO se la cella è gialla (ribasso)
-        if (immobile && cella.classList.contains('ribasso')) {
+        if (immobile && immobile.prezzo_myagency < immobile.prezzo) {
           const btn = document.createElement('button');
           btn.textContent = "Ribasso";
-        
+
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
+
             if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
-              immobile.prezzo_myagency = Math.round(immobile.prezzo_myagency * 0.95);
+
+              // **NUOVO COMPORTAMENTO RICHIESTO**
+              immobile.prezzo = immobile.prezzo_myagency;
+
               renderGriglia();
             }
           });
-        
+
           cella.appendChild(btn);
         }
-
 
         cella.addEventListener('click', () => {
           if (immobile) {
