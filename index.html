@@ -4,113 +4,126 @@
 <meta charset="UTF-8">
 <title>Dashboard Vetrine</title>
 <style>
-  table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-  .normale { background-color: white; }
-  .ribasso { background-color: #fff3b0; }
-  .segnaposto { background-color: #e0e0e0; }
-  .offline { background-color: #f8d7da; }
-  button.ribasso { padding: 2px 5px; font-size: 0.8em; }
+  body { font-family: sans-serif; margin: 20px; }
+  select { margin-bottom: 20px; }
+  .griglia { display: flex; flex-direction: column; gap: 10px; }
+  .riga { display: flex; gap: 10px; }
+  .cella { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #ccc; cursor: pointer; }
+  .cella.offline { background-color: #eee; }
+  .cella.segnaposto { background-color: #fff; }
+  .cella.ribasso { background-color: #ffdd57; }
+  .cella.normale { background-color: #a0e7a0; }
+  button { font-size: 10px; padding: 2px 5px; position: absolute; bottom: 2px; }
+  .conteggi { margin-top: 20px; }
 </style>
 </head>
 <body>
 
-<h2>Dashboard Vetrine</h2>
+<h1>Dashboard Vetrine</h1>
 
-<label for="agenziaSelect">Seleziona Agenzia:</label>
-<select id="agenziaSelect">
-    <option value="portogruaro">Portogruaro</option>
-    <option value="sanvito">San Vito</option>
-    <option value="pordenone">Pordenone</option>
+<label for="seleziona-agenzia">Agenzia:</label>
+<select id="seleziona-agenzia">
+  <option value="portogruaro">Portogruaro</option>
+  <option value="sanvito">San Vito</option>
+  <option value="pordenone">Pordenone</option>
 </select>
 
-<div>
-    <p>Totale cartelli: <span id="totale">0</span></p>
-    <p>Ribassi da fare: <span id="ribassi">0</span></p>
-    <p>Offline: <span id="offline">0</span></p>
-    <p>Segnaposto: <span id="segnaposto">0</span></p>
+<div class="griglia" id="griglia"></div>
+
+<div class="conteggi">
+  <p>Cartelli totali: <span id="totale">0</span></p>
+  <p>Ribassi da fare: <span id="ribassi">0</span></p>
+  <p>Offline: <span id="offline">0</span></p>
 </div>
 
-<table id="vetrinaTable">
-  <thead>
-    <tr>
-      <th>Vetrina</th>
-      <th>Rif</th>
-      <th>Comune</th>
-      <th>Prezzo</th>
-      <th>Prezzo MyAgency</th>
-      <th>Segnaposto</th>
-      <th>Azioni</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
 <script>
+const struttura = {
+  portogruaro: [4,4,3,4,5],
+  sanvito: [2,2,2],
+  pordenone: [3,5]
+};
+
+const grigliaDiv = document.getElementById('griglia');
+const selectAgenzia = document.getElementById('seleziona-agenzia');
+let immobili = [];
+
 async function caricaVetrine() {
-    const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
-    const json = await res.json();
-    if (!json.success) { console.error("Errore:", json.message); return; }
+  const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
+  const json = await res.json();
+  if (!json.success) { console.error("Errore:", json.message); return; }
+  immobili = json.data;
+  renderGriglia();
+}
 
-    const tuttiImmobili = json.data;
+function renderGriglia() {
+  const agenzia = selectAgenzia.value;
+  grigliaDiv.innerHTML = '';
+  
+  const immobiliAgenzia = immobili.filter(i => i.agenzia === agenzia);
 
-    const agenziaSelect = document.getElementById("agenziaSelect");
-    const tableBody = document.querySelector("#vetrinaTable tbody");
+  let countRibasso = 0;
+  let countOffline = 0;
 
-    function aggiornaTabella() {
-        const agenzia = agenziaSelect.value;
-        tableBody.innerHTML = "";
+  let indice = 0;
 
-        const cartelli = tuttiImmobili.filter(i => i.agenzia === agenzia);
+  struttura[agenzia].forEach((colonne, rigaIdx) => {
+    const riga = document.createElement('div');
+    riga.classList.add('riga');
 
-        let ribassiCount = 0, segnapostoCount = 0, offlineCount = 0;
+    for (let c = 0; c < colonne; c++) {
+      const immobile = immobiliAgenzia[indice];
+      const cella = document.createElement('div');
+      cella.classList.add('cella');
 
-        // Creiamo mappa dei cartelli attesi per calcolare offline
-        const cartelliAttesi = agenzia === "portogruaro" ? 60 : agenzia === "sanvito" ? 18 : 24;
-        const presentiSet = new Set(cartelli.map(i => i.vetrina));
+      if (!immobile) {
+        cella.classList.add('offline');
+        countOffline++;
+      } else if (immobile.segnaposto) {
+        cella.classList.add('segnaposto');
+      } else if (immobile.prezzo_myagency < immobile.prezzo) {
+        cella.classList.add('ribasso');
+        countRibasso++;
+      } else {
+        cella.classList.add('normale');
+      }
 
-        for (let i = 1; i <= cartelliAttesi; i++) {
-            const codice = (agenzia === "portogruaro" ? "PO-" : agenzia === "sanvito" ? "SA-" : "PN-") + String(i).padStart(2,"0");
-            const immobile = cartelli.find(c => c.vetrina === codice);
-            const tr = document.createElement("tr");
+      // Pulsante ribasso
+      if (immobile && !immobile.segnaposto) {
+        const btn = document.createElement('button');
+        btn.textContent = "Ribasso";
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
+            alert(`Ribasso eseguito per ${immobile.rif}`);
+            // Aggiorna stato locale per la visualizzazione
+            immobile.prezzo_myagency = immobile.prezzo_myagency * 0.95;
+            renderGriglia();
+          }
+        });
+        cella.appendChild(btn);
+      }
 
-            if (!immobile) {
-                // Offline = cartello mancante
-                tr.className = "offline";
-                tr.innerHTML = `<td>${codice}</td><td>-</td><td>-</td><td>0</td><td>0</td><td>No</td><td></td>`;
-                offlineCount++;
-            } else if (immobile.segnaposto) {
-                tr.className = "segnaposto";
-                tr.innerHTML = `<td>${immobile.vetrina}</td><td>${immobile.rif}</td><td>${immobile.comune}</td><td>${immobile.prezzo}</td><td>${immobile.prezzo_myagency}</td><td>Sì</td><td></td>`;
-                segnapostoCount++;
-            } else if (immobile.prezzo_myagency < immobile.prezzo) {
-                tr.className = "ribasso";
-                tr.innerHTML = `<td>${immobile.vetrina}</td><td>${immobile.rif}</td><td>${immobile.comune}</td><td>${immobile.prezzo}</td><td>${immobile.prezzo_myagency}</td><td>No</td>
-                                <td><button class="ribasso" onclick="confermaRibasso('${immobile.rif}')">Ribassa</button></td>`;
-                ribassiCount++;
-            } else {
-                tr.className = "normale";
-                tr.innerHTML = `<td>${immobile.vetrina}</td><td>${immobile.rif}</td><td>${immobile.comune}</td><td>${immobile.prezzo}</td><td>${immobile.prezzo_myagency}</td><td>No</td><td></td>`;
-            }
-            tableBody.appendChild(tr);
+      // Toggle segnaposto al click
+      cella.addEventListener('click', () => {
+        if (immobile) {
+          immobile.segnaposto = !immobile.segnaposto;
+          renderGriglia();
         }
+      });
 
-        document.getElementById("totale").textContent = cartelliAttesi;
-        document.getElementById("ribassi").textContent = ribassiCount;
-        document.getElementById("offline").textContent = offlineCount;
-        document.getElementById("segnaposto").textContent = segnapostoCount;
+      riga.appendChild(cella);
+      indice++;
     }
 
-    agenziaSelect.addEventListener("change", aggiornaTabella);
-    aggiornaTabella();
+    grigliaDiv.appendChild(riga);
+  });
+
+  document.getElementById('totale').textContent = immobiliAgenzia.length;
+  document.getElementById('ribassi').textContent = countRibasso;
+  document.getElementById('offline').textContent = countOffline;
 }
 
-function confermaRibasso(rif) {
-    if (confirm(`Confermi il ribasso per l'immobile ${rif}?`)) {
-        alert(`Ribasso confermato per immobile ${rif}`);
-        // qui si potrà chiamare API per aggiornare prezzo
-    }
-}
+selectAgenzia.addEventListener('change', renderGriglia);
 
 caricaVetrine();
 </script>
