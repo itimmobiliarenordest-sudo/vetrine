@@ -812,26 +812,23 @@ async function onSearch() {
     const rif = inputRicerca.value.trim().toLowerCase();
     if (!rif) return showToast('Inserisci un RIF', 2000);
     
-    // Identifica i dati dell'agenzia attualmente selezionata
-    const agenziaCorrente = selectAgenzia.value;
-    const immobiliAgenzia = allData[agenziaCorrente]; // Ottieni solo l'array di immobili dell'agenzia corrente
+    // Rimuovi evidenziazione precedente e prepara lo stato di ricerca
+    rifDaCercare = '';
+    
+    // 1. Cerca il RIF in tutti i dati caricati in memoria
+    let immobileTrovato = null;
+    let agenziaTrovata = null;
 
-    if (!immobiliAgenzia) {
-        return showToast('Dati non caricati per l\'agenzia corrente.', 3000);
+    for (const agenzia in allData) {
+        if (Array.isArray(allData[agenzia])) {
+            const found = allData[agenzia].find(item => item && item.rif && item.rif.toLowerCase() === rif);
+            if (found) {
+                immobileTrovato = found;
+                agenziaTrovata = agenzia;
+                break;
+            }
+        }
     }
-    
-    // Cerca il RIF SOLO NEI DATI DELL'AGENZIA CORRENTE
-    const immobileTrovato = immobiliAgenzia.find(item => item && item.rif && item.rif.toLowerCase() === rif);
-    
-    if (immobileTrovato) {
-        rifDaCercare = immobileTrovato.rif.toLowerCase();
-        renderGriglia(immobileTrovato.rif); 
-        showToast(`Trovato RIF ${immobileTrovato.rif} nell'agenzia ${agenziaCorrente}`, 2000);
-    } else {
-        renderGriglia(); 
-        showToast(`RIF ${rif} non trovato nell'agenzia selezionata.`, 3000);
-    }
-}
     
     // 2. Gestisci il risultato
     if (immobileTrovato) {
