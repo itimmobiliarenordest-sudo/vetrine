@@ -167,6 +167,50 @@
     word-break: break-word;
   }
 
+
+/* STILI AGGIUNTIVI PER IL NUOVO FORM DI SOSTITUZIONE RIF */
+.sostituzione-container {
+    margin-top: 15px; /* Spazio dal blocco di ricerca */
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Spazio tra gli elementi */
+    padding: 10px;
+    border: 1px solid #ccc; /* Bordo leggero per separare il blocco */
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.sostituzione-container label {
+    font-weight: normal; /* Le label dentro questo blocco sono più leggere */
+    color: #4c565c;
+    margin-right: 0;
+}
+
+.sostituzione-container input[type="text"] {
+    padding: 8px;
+    border: 1px solid #b30933; /* Bordo più evidente per gli input principali */
+    border-radius: 5px;
+    font-size: 14px;
+    width: 80px; /* Larghezza fissa per RIF */
+    text-align: center;
+}
+
+#bottoneSostituzione {
+    /* Eredita lo stile del bottone di default */
+    background-color: #b30933;
+    padding: 8px 15px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+#bottoneSostituzione:hover {
+    background-color: #8c0727;
+}
+
+
+
+
+  
   /* Pulsante Ribasso (nuovo stile più discreto) */
   .cella button {
     margin-top: 4px;
@@ -321,6 +365,19 @@
   <div>Ribassi da fare: <span id="ribassi">0</span></div>
   <div>Offline: <span id="offline">0</span></div>
 </div>
+
+
+<div class="sostituzione-container">
+    <label for="rifVecchio">Sostituisci:</label>
+    <input type="text" id="rifVecchio" placeholder="RIF Vecchio">
+    
+    <label for="rifNuovo">con:</label>
+    <input type="text" id="rifNuovo" placeholder="RIF Nuovo">
+    
+    <button id="bottoneSostituzione">Sostituisci</button>
+</div>
+
+  
 
 <div id="modal">
     <div id="modalContainer">
