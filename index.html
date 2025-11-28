@@ -461,13 +461,19 @@ async function postPlaceholder(rif, placeholder) {
     return res.json();
 }
 
-  async function postSostituzione(rifVecchio, rifNuovo) {
+async function postSostituzione(rifVecchio, rifNuovo) {
     const workerUrl = `${WORKER_BASE}/vetrine/sostituzione`;
+    const agenziaCorrente = selectAgenzia.value; // <-- RECUPERA AGENZIA
+
     const res = await fetchWithTimeout(workerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Il Worker ha bisogno di 'rif_vecchio' e 'rif_nuovo'
-        body: JSON.stringify({ rif_vecchio: String(rifVecchio), rif_nuovo: String(rifNuovo) })
+        // Invia rif_vecchio, rif_nuovo E l'agenzia corrente al Worker
+        body: JSON.stringify({ 
+            rif_vecchio: String(rifVecchio), 
+            rif_nuovo: String(rifNuovo),
+            agenzia: agenziaCorrente // <-- INVIATO AL WORKER
+        })
     }, TIMEOUT_MS);
     return res.json();
 }
