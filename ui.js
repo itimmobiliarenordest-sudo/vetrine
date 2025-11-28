@@ -1,291 +1,733 @@
-// ui.js
-import { getAllVetrine, searchByRif, postRibasso, postPlaceholder } from './api.js';
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Vetrine</title>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f4f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
 
-// If your environment doesn't support modules in browser, the above can be replaced by including api.js first
-// and reading global functions. For GitHub Pages we used <script src="api.js"></script><script src="ui.js"></script>
-// So here we instead assume api functions are global. To keep simple reassign:
-if (typeof getAllVetrine === 'undefined') {
-  // In-browser non-module fallback: api.js attached its functions to window
-  window.getAllVetrine = window.getAllVetrine || (() => Promise.reject('API missing'));
-  window.searchByRif = window.searchByRif || (() => Promise.reject('API missing'));
-  window.postRibasso = window.postRibasso || (() => Promise.reject('API missing'));
-  window.postPlaceholder = window.postPlaceholder || (() => Promise.reject('API missing'));
+  h1 {
+    text-align: center;
+    color: #b30933;
+    margin-top: 20px;
+  }
+
+  /* STILE SELECT E LABEL */
+  label { 
+    font-weight: bold; 
+    color: #4c565c;
+    margin-right: 10px;
+  }
+  select { 
+    padding: 8px 15px; 
+    margin: 10px 0; 
+    font-size: 16px; 
+    border: 2px solid #b30933; 
+    border-radius: 8px; 
+    background-color: white; 
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b30933' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px; 
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
+  }
+  
+  /* Stile per il campo di ricerca */
+  .cerca-container {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  #inputRicerca {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+
+  .griglia {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    min-height: 400px;
+    position: relative;
+  }
+
+  .riga { display: flex; gap: 10px; justify-content: center; }
+
+  .blocco {
+    display: flex;
+    gap: 8px;
+    padding: 5px;
+    border-right: 3px solid #4c565c;
+    transition: transform 0.3s;
+  }
+
+  .blocco:last-child { border-right: none; }
+
+  .cella {
+    width: 90px; height: 80px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-sizing: border-box;
+    cursor: pointer;
+    padding: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+    text-align: center;
+    overflow-wrap: break-word;
+    position: relative; /* Necessario per il pulsante */
+  }
+
+  .cella:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
+
+  /* Classi STATI (da ui.js) */
+  .cella.rosso { /* Offline */
+    background-color: #fce8e8; 
+    color: #b30933; 
+    font-weight: bold;
+  }
+  .cella.bianco { /* Segnaposto */
+    background-color: #87A0CC; 
+    color: white; 
+  }
+  .cella.giallo { /* Ribasso */
+    background-color: #ffeb99; 
+    color: #555; 
+  }
+  .cella.verde { /* Normale */
+    background-color: #a0e7a0; 
+    color: #333; 
+  }
+  .cella.blu { /* Vecchio (>180 giorni) */
+    background-color: #c0d9f0; 
+    color: #4c565c; 
+  }
+  
+  /* CLASSE PER EVIDENZIAZIONE RICERCA */
+  .cella.evidenziato {
+    background-color: #4da6ff !important;
+    color: white !important;
+    transform: scale(1.05) translateY(-5px); 
+    box-shadow: 0 8px 20px rgba(77, 166, 255, 0.5);
+    border: 3px solid white; 
+  }
+
+  .cella .prezzo-vecchio {
+    text-decoration: line-through;
+    font-weight: normal; 
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 2px;
+    word-break: break-word;
+  }
+
+  .cella .prezzo-nuovo {
+    font-weight: bold; 
+    color: black;
+    margin-bottom: 2px;
+    word-break: break-word;
+  }
+
+  .cella .comune {
+    font-size: 0.8em;
+    color: #333;
+    word-break: break-word;
+  }
+
+  .cella .rif {
+    font-weight: bold;
+    margin-bottom: 2px;
+    word-break: break-word;
+  }
+
+  /* Pulsante Ribasso (nuovo stile più discreto) */
+  .cella button {
+    margin-top: 4px;
+    font-size: 10px;
+    padding: 2px 5px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ff8c00; /* Arancione scuro */
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+
+  .cella button:hover { 
+      background-color: #e67e00; 
+      transform: scale(1.1); 
+  }
+  
+  #bottoneCerca { 
+      padding: 8px 15px;
+      font-size: 14px;
+      margin-top: 0;
+      background-color: #007bff;
+  }
+  #bottoneCerca:hover {
+      background-color: #0056b3;
+  }
+
+  .conteggi {
+    margin-top: 20px;
+    font-weight: bold;
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  /* MODAL, TOAST, LOADING STYLES */
+  #loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #b30933;
+    z-index: 1000;
+    display: none;
+  }
+
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    opacity: 0.9;
+    z-index: 1000;
+    display: none;
+  }
+
+  #modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #modalContainer {
+    background-color: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+  }
+
+  #modalContent {
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+
+  #modalButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  #modalCancel, #modalConfirm {
+    font-size: 14px;
+    padding: 8px 15px;
+    cursor: pointer;
+    margin-top: 0;
+  }
+
+  #modalConfirm {
+    background-color: #b30933;
+    color: white;
+  }
+
+  #modalCancel {
+    background-color: #ccc;
+    color: #333;
+  }
+
+  /* Animazione fade */
+  .fade { animation: fadeIn 0.4s ease-in-out; }
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<h1>Dashboard Vetrine</h1>
+
+<div>
+  <label for="selezionaAgenzia">Seleziona Agenzia:</label>
+  <select id="selezionaAgenzia">
+    <option value="portogruaro">Portogruaro</option>
+    <option value="sanvito">San Vito</option>
+    <option value="pordenone">Pordenone</option>
+  </select>
+</div>
+
+<div class="griglia" id="griglia">
+  </div>
+
+<div id="loading">Caricamento dati...</div>
+
+<div class="cerca-container">
+    <input type="text" id="inputRicerca" placeholder="Cerca Riferimento (es. 1234)">
+    <button id="bottoneCerca">Cerca</button>
+</div>
+
+<div class="conteggi">
+  <div>Cartelli totali: <span id="totale">0</span></div>
+  <div>Ribassi da fare: <span id="ribassi">0</span></div>
+  <div>Offline: <span id="offline">0</span></div>
+</div>
+
+<div id="modal">
+    <div id="modalContainer">
+        <div id="modalContent"></div>
+        <div id="modalButtons">
+            <button id="modalCancel">Annulla</button>
+            <button id="modalConfirm">Conferma</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ======================================================================
+// CONFIGURAZIONE API E FUNZIONI (da api.js)
+// ======================================================================
+
+// !!! AGGIORNA QUESTO VALORE CON IL TUO WORKER URL !!!
+const WORKER_BASE = "https://vetrine.it-immobiliarenordest.workers.dev"; 
+const TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, opts = {}, timeout = TIMEOUT_MS) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+    } catch (err) {
+        clearTimeout(id);
+        throw err;
+    }
 }
 
-(function main(){
-  const agencyEl = document.getElementById('agency');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const loadingEl = document.getElementById('loading');
-  const grid = document.getElementById('grid');
-  const toast = document.getElementById('toast');
-  const modalBack = document.getElementById('modal');
-  const modalContent = document.getElementById('modalContent');
-  const modalCancel = document.getElementById('modalCancel');
-  const modalConfirm = document.getElementById('modalConfirm');
-  const searchInput = document.getElementById('searchInput');
-  const searchBtn = document.getElementById('searchBtn');
+async function getAllVetrine() {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine`);
+    if (!res.ok) throw new Error("Errore caricamento vetrine");
+    const body = await res.json();
+    if (!body.success) throw new Error(body.error || "Errore API");
+    return body.data; 
+}
 
-  const statTotal = document.getElementById('statTotal');
-  const statYellow = document.getElementById('statYellow');
-  const statRed = document.getElementById('statRed');
-  const statBlue = document.getElementById('statBlue');
-  const statPlaceholder = document.getElementById('statPlaceholder');
+async function searchByRif(rif) {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine/rif/${encodeURIComponent(rif)}`);
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body.success ? body.immobile : null;
+}
 
-  let allData = [];
-  let currentAgency = agencyEl.value;
-  let currentFilter = 'all';
-  let pendingAction = null; // {type, rif, extra}
+async function postRibasso(rif, nuovoPrezzo) {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine/ribasso`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Il Worker ha bisogno di 'nuovo_prezzo' e 'rif'
+        body: JSON.stringify({ rif: String(rif), nuovo_prezzo: Number(nuovoPrezzo) })
+    }, TIMEOUT_MS);
+    return res.json();
+}
 
-  // load on start
-  agencyEl.addEventListener('change', () => {
-    currentAgency = agencyEl.value;
-    renderGrid();
-  });
-  refreshBtn.addEventListener('click', loadData);
-  searchBtn.addEventListener('click', onSearch);
-  searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') onSearch(); });
+async function postPlaceholder(rif, placeholder) {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine/placeholder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Il Worker ha bisogno di 'placeholder' (boolean) e 'rif'
+        body: JSON.stringify({ rif: String(rif), placeholder: !!placeholder })
+    }, TIMEOUT_MS);
+    return res.json();
+}
 
-  // filters
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentFilter = btn.dataset.filter;
-      renderGrid();
-    });
-  });
+// ======================================================================
+// VARIABILI GLOBALI E UTILITY (da ui.js)
+// ======================================================================
 
-  modalCancel.addEventListener('click', ()=> { modalBack.style.display='none'; pendingAction=null; });
-  modalBack.addEventListener('click', (e) => { if(e.target===modalBack){ modalBack.style.display='none'; pendingAction=null;}});
-  modalConfirm.addEventListener('click', async () => {
-    if (!pendingAction) return;
-    modalBack.style.display = 'none';
-    const { type, rif, payload } = pendingAction;
-    showToast('Eseguo...', 2000);
-    try {
-      if (type === 'ribasso') {
-        const resp = await postRibasso(rif, payload.nuovo);
-        if (resp && resp.success) showToast('Prezzo aggiornato', 2500);
-        else showToast('Errore: ' + (resp.error||'unknown'), 3500);
-      } else if (type === 'placeholder') {
-        const resp = await postPlaceholder(rif, payload.placeholder);
-        if (resp && resp.success) showToast('Segnaposto aggiornato', 2500);
-        else showToast('Errore: ' + (resp.error||'unknown'), 3500);
-      }
-      await loadData();
-    } catch (err) {
-      showToast('Errore rete: ' + err.message, 3500);
-    } finally {
-      pendingAction = null;
-    }
-  });
+const agenzieBlocchi = {
+  portogruaro: [4, 4, 3, 4, 5],
+  sanvito: [2, 2, 2],
+  pordenone: [3, 5]
+};
+const righe = 3;
+let allData = {}; // Dati raggruppati per agenzia (come in ui.js)
+let rifDaCercare = '';
+let pendingAction = null; // Stato per l'azione in attesa di conferma Modale
 
-  async function onSearch() {
-    const rif = searchInput.value.trim();
-    if (!rif) return showToast('Inserisci un RIF',2000);
-    showLoading(true);
-    try {
-      const imm = await searchByRif(rif);
-      showLoading(false);
-      if (!imm) return showToast(`Nessun immobile con RIF ${rif}`, 3000);
-      // highlight agency and scroll
-      agencyEl.value = imm.agenzia;
-      currentAgency = imm.agenzia;
-      renderGrid(imm.rif);
-      showToast(`Trovato RIF ${rif}`, 2000);
-    } catch (err) {
-      showLoading(false);
-      showToast('Errore ricerca: ' + err.message, 3500);
-    }
-  }
+// Elementi UI
+const grigliaDiv = document.getElementById('griglia');
+const selectAgenzia = document.getElementById('selezionaAgenzia');
+const inputRicerca = document.getElementById('inputRicerca');
+const bottoneCerca = document.getElementById('bottoneCerca');
+const modalBack = document.getElementById('modal');
+const modalContent = document.getElementById('modalContent');
+const modalCancel = document.getElementById('modalCancel');
+const modalConfirm = document.getElementById('modalConfirm');
+const loadingEl = document.getElementById('loading');
+const toast = document.getElementById('toast');
 
-  async function loadData(){
-    showLoading(true);
-    try {
-      const data = await getAllVetrine();
-      // data is object with agency arrays OR flat array. Normalize:
-      if (Array.isArray(data)) {
-        // if server returns flat array, group by agency
-        const grouped = {};
-        data.forEach(it => {
-          const ag = it.agenzia || 'portogruaro';
-          grouped[ag] = grouped[ag] || [];
-          grouped[ag].push(it);
-        });
-        allData = grouped;
-      } else {
-        allData = data;
-      }
-      showLoading(false);
-      renderGrid();
-    } catch (err) {
-      showLoading(false);
-      showToast('Errore caricamento: ' + err.message, 3500);
-    }
-  }
 
-  function computeClass(item){
-    if (item.segnaposto) return 'bianco';
-    if (!item.prezzo || Number(item.prezzo) === 0) return 'rosso';
-    // prezzo_myagency is authoritative price to set locally (if prezzo < prezzo_myagency => giallo)
-    const prezzo = Number(item.prezzo || 0);
-    const prezzo_ref = Number(item.prezzo_myagency || item.prezzo || 0);
-    const days = daysSince(item.timestamp);
-    if (prezzo < prezzo_ref) return 'giallo';
-    if (days > 180) return 'blu';
-    return 'verde';
-  }
+function formatMoney(n){
+    return Number(n).toLocaleString('it-IT');
+}
 
-  function daysSince(dateStr){
+function daysSince(dateStr){
     if (!dateStr) return 9999;
     const d = new Date(dateStr);
     const now = new Date();
     const diff = now - d;
     return Math.floor(diff / (1000*60*60*24));
-  }
+}
 
-  function buildCellHTML(item, idx) {
-    const cls = computeClass(item);
-    const price = item.prezzo ? formatMoney(item.prezzo) : '-';
-    const ref = item.rif || '';
-    let html = `<div class="cell ${cls}" data-rif="${ref}" data-idx="${idx}">
-      <div>
-        <div class="ref">Rif. ${ref}</div>
-        <div class="price">€ ${price}</div>
-        <div class="comune">${(item.comune||'').toUpperCase()}</div>
-      </div>
-      <div class="actions">`;
-
-    if (cls === 'giallo') {
-      html += `<button class="smallbtn" data-action="ribasso">Aggiorna</button>`;
-    }
-    html += `<button class="smallbtn" data-action="placeholder">${item.segnaposto ? 'Rimuovi segnaposto' : 'Segnaposto'}</button>`;
-    html += `</div></div>`;
-    return html;
-  }
-
-  function formatMoney(n){
-    return Number(n).toLocaleString('it-IT');
-  }
-
-  function renderGrid(highlightRif){
-    grid.innerHTML = '';
-    const list = allData[currentAgency] || [];
-    // apply filter
-    let filtered = list.filter(it => {
-      if (currentFilter === 'all') return true;
-      if (currentFilter === 'gialli') return computeClass(it) === 'giallo';
-      if (currentFilter === 'rossi') return computeClass(it) === 'rosso';
-      if (currentFilter === 'placeholder') return it.segnaposto === true;
-      return true;
-    });
-
-    // stats
-    statTotal.innerText = list.length;
-    statYellow.innerText = list.filter(i=>computeClass(i)==='giallo').length;
-    statRed.innerText = list.filter(i=>computeClass(i)==='rosso').length;
-    statBlue.innerText = list.filter(i=>computeClass(i)==='blu').length;
-    statPlaceholder.innerText = list.filter(i=>i.segnaposto).length;
-
-    // render cells
-    filtered.forEach((item, idx) => {
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = buildCellHTML(item, idx);
-      const cell = wrapper.firstElementChild;
-      // highlight if searched
-      if (highlightRif && item.rif === highlightRif) {
-        cell.style.outline = '3px solid #333';
-        setTimeout(()=>cell.style.outline='',4000);
-      }
-      // bind actions
-      cell.querySelectorAll('[data-action]').forEach(btn => {
-        btn.addEventListener('click', (ev) => {
-          const action = btn.dataset.action;
-          onCellAction(action, item);
-        });
-      });
-      grid.appendChild(cell);
-    });
-
-    if (filtered.length === 0) {
-      grid.innerHTML = '<div style="padding:20px;color:#666">Nessun cartello in questa vista</div>';
-    }
-  }
-
-  async function onCellAction(action, item){
-    if (action === 'ribasso') {
-      // ask user the new price
-      const current = item.prezzo || item.prezzo_myagency || 0;
-      showModal(`<div>RIF: <b>${item.rif}</b></div>
-      <div style="margin-top:8px">Prezzo corrente: <b>€ ${formatMoney(current)}</b></div>
-      <div style="margin-top:8px">
-        <label>Nuovo prezzo (senza separatori):</label>
-        <input id="modalInput" type="number" style="width:100%;padding:8px;margin-top:6px" value="${current}">
-      </div>`);
-      pendingAction = { type: 'ribasso', rif: item.rif, payload: { nuovo: null } };
-      // when confirm clicked, read input value in confirm handler
-      modalConfirm.onclick = async ()=>{
-        const val = document.getElementById('modalInput').value;
-        if (!val || Number(val)<=0) { showToast('Inserisci un prezzo valido', 2000); return; }
-        pendingAction.payload.nuovo = Number(val);
-        modalBack.style.display='none';
-        // delegate to modalConfirm's general handler
-        await modalConfirm.dispatchEvent(new Event('click_global'));
-      };
-      // dispatch to general handler by listening for custom event
-      modalConfirm.addEventListener('click_global', async function handler(){
-        modalConfirm.removeEventListener('click_global', handler);
-        // reuse general confirm click
-        modalBack.style.display='none';
-        showToast('Aggiorno prezzo...', 2000);
-        try {
-          const resp = await postRibasso(item.rif, pendingAction.payload.nuovo);
-          if (resp && resp.success) showToast('Prezzo aggiornato', 2200);
-          else showToast('Errore: ' + (resp.error || 'unknown'), 3000);
-        } catch (err) {
-          showToast('Errore rete: ' + err.message, 3000);
-        }
-        pendingAction = null;
-        await loadData();
-      }, { once: true });
-    } else if (action === 'placeholder') {
-      // toggle
-      const newVal = !item.segnaposto;
-      showModal(`<div>RIF: <b>${item.rif}</b></div><div>Impostare segnaposto: <b>${newVal ? 'SI' : 'NO'}</b>?</div>`);
-      pendingAction = { type: 'placeholder', rif: item.rif, payload: { placeholder: newVal } };
-      modalConfirm.onclick = ()=> {
-        modalConfirm.dispatchEvent(new Event('click_global_placeholder'));
-      };
-      modalConfirm.addEventListener('click_global_placeholder', async function handler(){
-        modalConfirm.removeEventListener('click_global_placeholder', handler);
-        modalBack.style.display='none';
-        showToast('Aggiorno segnaposto...', 1500);
-        try {
-          const resp = await postPlaceholder(item.rif, newVal);
-          if (resp && resp.success) showToast('Segnaposto aggiornato', 2000);
-          else showToast('Errore: ' + (resp.error||'unknown'), 3000);
-        } catch (err) {
-          showToast('Errore rete: ' + err.message, 3000);
-        }
-        pendingAction = null;
-        await loadData();
-      }, { once: true });
-    }
-  }
-
-  function showModal(html){
+function showModal(html, confirmText = "Conferma"){
     modalContent.innerHTML = html;
+    modalConfirm.textContent = confirmText;
     modalBack.style.display='flex';
-  }
+}
 
-  function showToast(msg, ms=2000){
+function showToast(msg, ms=2500){
     toast.innerText = msg;
     toast.style.display='block';
     setTimeout(()=>{ toast.style.display='none'; }, ms);
-  }
+}
 
-  function showLoading(flag){
+function showLoading(flag){
     loadingEl.style.display = flag ? 'block' : 'none';
-  }
+}
 
-  // initial load
-  loadData();
-})();
+// Classificazione Stati (Rosso, Giallo, ecc.)
+function computeClass(item){
+    if (!item) return 'rosso'; // Tratta le celle vuote come OFFLINE/Rosso
+    if (item.prezzo_myagency === 0) return 'rosso'; // Offline forzato (come da richiesta)
+    if (item.segnaposto) return 'bianco';
+    
+    const prezzo = Number(item.prezzo || 0);
+    const prezzo_ref = Number(item.prezzo_myagency || item.prezzo || 0);
+    const days = daysSince(item.timestamp);
+    
+    if (prezzo > prezzo_ref) return 'giallo'; // Ribasso da fare (prezzo in vetrina > prezzo myagency)
+    if (days > 180) return 'blu';
+    return 'verde';
+}
+
+// ======================================================================
+// LOGICA DI CARICAMENTO E AGGIORNAMENTO DATI
+// ======================================================================
+
+async function loadData(){
+    showLoading(true);
+    try {
+        const data = await getAllVetrine();
+        
+        // Normalizza: se il server ritorna un array flat, raggruppa per agenzia
+        if (Array.isArray(data)) {
+            const grouped = {};
+            data.forEach(it => {
+                const ag = it.agenzia || 'portogruaro';
+                grouped[ag] = grouped[ag] || [];
+                grouped[ag].push(it);
+            });
+            allData = grouped;
+        } else {
+            allData = data;
+        }
+        showLoading(false);
+        renderGriglia();
+    } catch (err) {
+        showLoading(false);
+        showToast('Errore caricamento: ' + err.message, 3500);
+    }
+}
+
+function renderGriglia(highlightRif){
+    const agenzia = selectAgenzia.value;
+    const blocchi = agenzieBlocchi[agenzia];
+    const immobiliFiltrati = allData[agenzia] || []; 
+
+    grigliaDiv.innerHTML = '';
+    let indice = 0;
+    let countRibasso = 0;
+    let countOffline = 0;
+
+    const celleTotali = blocchi.reduce((sum, current) => sum + current, 0) * righe;
+    const immobiliPerGriglia = [...immobiliFiltrati];
+
+    while (immobiliPerGriglia.length < celleTotali) {
+        immobiliPerGriglia.push(null);
+    }
+
+    // Calcolo Conteggi
+    immobiliFiltrati.forEach(immobile => {
+        const cls = computeClass(immobile);
+        if (cls === 'giallo') countRibasso++;
+        if (cls === 'rosso') countOffline++;
+    });
+
+    document.getElementById('totale').textContent = immobiliFiltrati.length;
+    document.getElementById('ribassi').textContent = countRibasso;
+    document.getElementById('offline').textContent = countOffline;
+
+    for (let r = 0; r < righe; r++) {
+        const rigaDiv = document.createElement('div');
+        rigaDiv.classList.add('riga');
+
+        blocchi.forEach((colonne) => {
+            const bloccoDiv = document.createElement('div');
+            bloccoDiv.classList.add('blocco');
+
+            for (let c = 0; c < colonne; c++) {
+                const immobile = immobiliPerGriglia[indice];
+                const cella = document.createElement('div');
+                cella.classList.add('cella', 'fade');
+                
+                const cls = computeClass(immobile);
+                cella.classList.add(cls);
+
+                // CONTENUTO DELLA CELLA
+                if (cls === 'rosso') {
+                    cella.textContent = "OFFLINE";
+                } else if (cls === 'bianco') {
+                    cella.textContent = "SEGNAPOSTO";
+                } else if (immobile) {
+                    const prezzoCorrente = formatMoney(immobile.prezzo);
+                    
+                    if (cls === 'giallo') {
+                        // Cartello Giallo (Ribasso da fare)
+                        const prezzoMyAgency = formatMoney(immobile.prezzo_myagency);
+                        cella.innerHTML = `
+                            <div class="prezzo-vecchio">${prezzoCorrente} €</div>
+                            <div class="prezzo-nuovo">↓ ${prezzoMyAgency} €</div>
+                            <div class="comune">${immobile.comune}</div>
+                        `;
+                    } else {
+                        // Cartello Verde o Blu (Normale/Vecchio)
+                        cella.innerHTML = `
+                            <div class="rif">${immobile.rif}</div>
+                            <div class="prezzo-nuovo">${prezzoCorrente} €</div>
+                            <div class="comune">${immobile.comune}</div>
+                        `;
+                    }
+                }
+                
+                // LOGICA DI EVIDENZIAZIONE
+                if (immobile && immobile.rif && rifDaCercare && immobile.rif.toLowerCase() === rifDaCercare.toLowerCase()) {
+                    cella.classList.add('evidenziato');
+                    // Scrolla solo se è la prima volta che viene renderizzato dopo la ricerca
+                    if (highlightRif === immobile.rif) {
+                        setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                    }
+                }
+
+                // AGGIUNGI PULSANTE RIBASSO (SOLO SU GIALLO)
+                if (cls === 'giallo') {
+                    const btn = document.createElement('button');
+                    btn.textContent = "Aggiorna";
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Chiama l'azione Ribasso
+                        onCellAction('ribasso', immobile); 
+                    });
+                    cella.appendChild(btn);
+                }
+                
+                // LOGICA CLICK PER SEGNAPOSTO (SU TUTTE TRANNE GIALLO)
+                if (immobile && cls !== 'giallo') {
+                    cella.addEventListener('click', () => {
+                        // Chiama l'azione Segnaposto/Placeholder
+                        onCellAction('placeholder', immobile); 
+                    });
+                }
+
+                bloccoDiv.appendChild(cella);
+                indice++;
+            }
+
+            rigaDiv.appendChild(bloccoDiv);
+        });
+
+        grigliaDiv.appendChild(rigaDiv);
+    }
+}
+
+// ======================================================================
+// AZIONI CELLA E MODALE (da ui.js)
+// ======================================================================
+
+async function onCellAction(action, item){
+    if (action === 'ribasso') {
+        // Logica specifica per l'aggiornamento del prezzo
+        const rif = item.rif;
+        const nuovoPrezzo = item.prezzo_myagency; // Prezzo di destinazione
+        
+        showModal(`
+            <div>Confermi l'aggiornamento del prezzo per RIF: <b>${rif}</b>?</div>
+            <div style="margin-top:8px">Il prezzo passerà da <b>€ ${formatMoney(item.prezzo)}</b> a <b>€ ${formatMoney(nuovoPrezzo)}</b>.</div>
+        `, "Conferma Ribasso");
+        
+        pendingAction = { type: 'ribasso', rif: rif, payload: { nuovo: nuovoPrezzo } };
+        
+    } else if (action === 'placeholder') {
+        // Logica per Segnaposto (toggle)
+        const newVal = !item.segnaposto;
+        const statoTesto = newVal ? 'SI' : 'NO';
+        
+        showModal(`
+            <div>RIF: <b>${item.rif}</b></div>
+            <div>Impostare Segnaposto: <b>${statoTesto}</b>?</div>
+        `, "Conferma");
+        
+        pendingAction = { type: 'placeholder', rif: item.rif, payload: { placeholder: newVal } };
+    }
+}
+
+// Handler generale per il click su Conferma del Modale
+modalConfirm.addEventListener('click', async () => {
+    if (!pendingAction) return;
+
+    modalBack.style.display = 'none';
+    const { type, rif, payload } = pendingAction;
+    showToast('Eseguo aggiornamento...', 2000);
+
+    try {
+        let resp;
+        if (type === 'ribasso') {
+            resp = await postRibasso(rif, payload.nuovo);
+        } else if (type === 'placeholder') {
+            resp = await postPlaceholder(rif, payload.placeholder);
+        }
+
+        if (resp && resp.success) {
+            showToast('Aggiornamento riuscito!', 2500);
+            await loadData(); // Ricarica i dati per aggiornare l'intera griglia
+        } else {
+            showToast('Errore: ' + (resp.error || 'unknown'), 3500);
+        }
+    } catch (err) {
+        showToast('Errore rete o timeout: ' + err.message, 3500);
+    } finally {
+        pendingAction = null;
+    }
+});
+
+modalCancel.addEventListener('click', ()=> { modalBack.style.display='none'; pendingAction=null; });
+modalBack.addEventListener('click', (e) => { if(e.target===modalBack){ modalBack.style.display='none'; pendingAction=null;}});
+
+
+// ======================================================================
+// GESTIONE RICERCA E URL
+// ======================================================================
+
+function getAgenziaFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('agenzia'); 
+}
+
+function cambiaAgenziaConUrl() {
+    const nuovaAgenzia = selectAgenzia.value;
+    const currentUrl = new URL(window.location.href);
+    
+    currentUrl.searchParams.set('agenzia', nuovaAgenzia);
+    
+    // Ricarica la pagina con il nuovo URL per applicare il filtro
+    window.location.href = currentUrl.toString();
+}
+
+async function onSearch() {
+    const rif = inputRicerca.value.trim();
+    if (!rif) return showToast('Inserisci un RIF', 2000);
+    
+    showLoading(true);
+    try {
+        const imm = await searchByRif(rif);
+        showLoading(false);
+        
+        if (!imm) return showToast(`Nessun immobile con RIF ${rif}`, 3000);
+        
+        // Se trovato, imposta l'agenzia corretta e renderizza
+        selectAgenzia.value = imm.agenzia;
+        
+        rifDaCercare = imm.rif.toLowerCase();
+        renderGriglia(imm.rif); // Passa il RIF per l'highlight e lo scroll
+        showToast(`Trovato RIF ${imm.rif}`, 2000);
+    } catch (err) {
+        showLoading(false);
+        showToast('Errore ricerca: ' + err.message, 3500);
+    }
+}
+
+
+// ======================================================================
+// INIZIALIZZAZIONE E EVENT LISTENERS
+// ======================================================================
+
+// Imposta l'agenzia all'avvio se è presente nell'URL
+const agenziaUrl = getAgenziaFromUrl();
+if (agenziaUrl && agenzieBlocchi.hasOwnProperty(agenziaUrl)) {
+    selectAgenzia.value = agenziaUrl;
+}
+
+selectAgenzia.addEventListener('change', cambiaAgenziaConUrl); 
+bottoneCerca.addEventListener('click', onSearch);
+inputRicerca.addEventListener('keypress', (e) => { 
+    if (e.key === 'Enter') {
+        onSearch();
+    }
+});
+
+// Avvia il caricamento iniziale dei dati
+loadData();
+</script>
+
+</body>
+</html>
