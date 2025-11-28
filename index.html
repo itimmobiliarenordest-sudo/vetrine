@@ -553,9 +553,9 @@ function renderGriglia(highlightRif){
                         // Cartello Giallo (Ribasso da fare)
                         const prezzoMyAgency = formatMoney(immobile.prezzo_myagency);
                         cella.innerHTML = `
+                            <div class="rif">${immobile.rif}</div>
                             <div class="prezzo-vecchio">${prezzoCorrente} €</div>
                             <div class="prezzo-nuovo">↓ ${prezzoMyAgency} €</div>
-                            <div class="comune">${immobile.comune}</div>
                         `;
                     } else {
                         // Cartello Verde o Blu (Normale/Vecchio)
