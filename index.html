@@ -295,7 +295,7 @@
 </head>
 <body>
 
-<h1>Dashboard Vetrine</h1>
+<h1>Dashboard Vetrine2</h1>
 
 <div>
   <label for="selezionaAgenzia">Seleziona Agenzia:</label>
