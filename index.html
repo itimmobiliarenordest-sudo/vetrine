@@ -750,14 +750,17 @@ function getAgenziaFromUrl() {
     return params.get('agenzia'); 
 }
 
-function cambiaAgenziaConUrl() {
+function cambiaAgenzia() {
     const nuovaAgenzia = selectAgenzia.value;
     const currentUrl = new URL(window.location.href);
     
     currentUrl.searchParams.set('agenzia', nuovaAgenzia);
     
-    // Ricarica la pagina con il nuovo URL per applicare il filtro
-    window.location.href = currentUrl.toString();
+    // Aggiorna la barra degli indirizzi senza ricaricare la pagina
+    window.history.pushState({ path: currentUrl.href }, '', currentUrl.href);
+
+    // Ridisegna la griglia con i dati della nuova agenzia
+    renderGriglia();
 }
 
 async function onSearch() {
@@ -822,7 +825,7 @@ if (agenziaUrl && agenzieBlocchi.hasOwnProperty(agenziaUrl)) {
     selectAgenzia.value = agenziaUrl;
 }
 
-selectAgenzia.addEventListener('change', cambiaAgenziaConUrl); 
+selectAgenzia.addEventListener('change', cambiaAgenzia);
 bottoneCerca.addEventListener('click', onSearch);
 inputRicerca.addEventListener('keypress', (e) => { 
     if (e.key === 'Enter') {
