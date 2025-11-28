@@ -812,50 +812,31 @@ async function onSearch() {
     const rif = inputRicerca.value.trim().toLowerCase();
     if (!rif) return showToast('Inserisci un RIF', 2000);
     
+    // 1. Identifica l'agenzia e i dati correnti
+    const agenziaCorrente = selectAgenzia.value;
+    const immobiliAgenzia = allData[agenziaCorrente]; // Assume che allData sia un oggetto con le agenzie come chiavi
+    
     // Rimuovi evidenziazione precedente e prepara lo stato di ricerca
     rifDaCercare = '';
     
-    // 1. Cerca il RIF in tutti i dati caricati in memoria
-    let immobileTrovato = null;
-    let agenziaTrovata = null;
-
-    for (const agenzia in allData) {
-        if (Array.isArray(allData[agenzia])) {
-            const found = allData[agenzia].find(item => item && item.rif && item.rif.toLowerCase() === rif);
-            if (found) {
-                immobileTrovato = found;
-                agenziaTrovata = agenzia;
-                break;
-            }
-        }
+    if (!immobiliAgenzia || immobiliAgenzia.length === 0) {
+        // Se non ci sono dati per l'agenzia (dovrebbe essere raro dopo loadData)
+        return showToast('Dati non caricati per l\'agenzia corrente.', 3000);
     }
     
-    // 2. Gestisci il risultato
+    // 2. Cerca il RIF SOLO nei dati dell'agenzia corrente
+    const immobileTrovato = immobiliAgenzia.find(item => item && item.rif && String(item.rif).toLowerCase() === rif);
+    
+    // 3. Gestisci il risultato
     if (immobileTrovato) {
-        // Se l'immobile è in un'altra agenzia, cambia la select
-        if (selectAgenzia.value !== agenziaTrovata) {
-            selectAgenzia.value = agenziaTrovata;
-            // IMPORTANTE: Se cambi agenzia, devi chiamare cambiaAgenziaConUrl
-            // In questo caso, rendiamo la ricerca locale e non ricarichiamo la pagina
-            
-            // Se non vuoi ricaricare la pagina (come da tua implementazione)
-            // devi solo forzare il rendering, ma devi prima salvare lo stato di ricerca.
-
-            rifDaCercare = immobileTrovato.rif.toLowerCase();
-            renderGriglia(immobileTrovato.rif); // Ridisegna l'agenzia corretta e lo evidenzia
-            showToast(`Trovato RIF ${immobileTrovato.rif} (${agenziaTrovata})`, 3000);
-
-        } else {
-            // Se l'agenzia è già selezionata, renderizza per evidenziare
-            rifDaCercare = immobileTrovato.rif.toLowerCase();
-            renderGriglia(immobileTrovato.rif); 
-            showToast(`Trovato RIF ${immobileTrovato.rif}`, 2000);
-        }
-        
+        // Trovato nell'agenzia corrente: evidenzia e scorri
+        rifDaCercare = immobileTrovato.rif.toLowerCase();
+        renderGriglia(immobileTrovato.rif); // Ridisegna e evidenzia
+        showToast(`Trovato RIF ${immobileTrovato.rif} nell'agenzia ${agenziaCorrente}`, 2000);
     } else {
-        // Ridisegna l'agenzia corrente per togliere evidenziazioni precedenti
+        // Non trovato: ridisegna per togliere evidenziazioni precedenti
         renderGriglia(); 
-        showToast(`Nessun immobile con RIF ${rif} trovato nell'elenco caricato.`, 3000);
+        showToast(`RIF ${rif} non trovato nell'agenzia selezionata.`, 3000);
     }
 }
 
