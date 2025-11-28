@@ -536,7 +536,14 @@ function renderGriglia(highlightRif){
 
                 // CONTENUTO DELLA CELLA
                 if (cls === 'rosso') {
-                    cella.textContent = "OFFLINE";
+                    // SEZIONE MODIFICATA: Mostra il RIF e la parola OFFLINE
+                    // Sappiamo che 'immobile' esiste qui.
+                    if (immobile && immobile.rif) {
+                        cella.innerHTML = `<div class="rif">${immobile.rif}</div><div>OFFLINE</div>`;
+                    } else {
+                        // Manteniamo questa fallback per le celle di riempimento ROSSE (se mai ne avessimo)
+                        cella.textContent = "OFFLINE"; 
+                    }
                 } else if (cls === 'bianco') {
                     cella.textContent = "SEGNAPOSTO";
                 } else if (immobile) {
