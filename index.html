@@ -461,6 +461,17 @@ async function postPlaceholder(rif, placeholder) {
     return res.json();
 }
 
+  async function postSostituzione(rifVecchio, rifNuovo) {
+    const workerUrl = `${WORKER_BASE}/vetrine/sostituzione`;
+    const res = await fetchWithTimeout(workerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Il Worker ha bisogno di 'rif_vecchio' e 'rif_nuovo'
+        body: JSON.stringify({ rif_vecchio: String(rifVecchio), rif_nuovo: String(rifNuovo) })
+    }, TIMEOUT_MS);
+    return res.json();
+}
+
 // ======================================================================
 // VARIABILI GLOBALI E UTILITY (da ui.js)
 // ======================================================================
@@ -681,6 +692,34 @@ function renderGriglia(highlightRif){
 // AZIONI CELLA E MODALE (da ui.js)
 // ======================================================================
 
+// ... Elementi UI (aggiungi questi due)
+const inputRifVecchio = document.getElementById('rifVecchio');
+const inputRifNuovo = document.getElementById('rifNuovo');
+const bottoneSostituzione = document.getElementById('bottoneSostituzione');
+
+  // Gestisce l'azione di Sostituzione RIF dal form in alto
+function onSostituzione() {
+    const rifVecchio = inputRifVecchio.value.trim();
+    const rifNuovo = inputRifNuovo.value.trim();
+
+    if (!rifVecchio || !rifNuovo) {
+        return showToast('Devi inserire entrambi i RIF.', 3000);
+    }
+
+    showModal(`
+        <div>Confermi la sostituzione?</div>
+        <div style="margin-top:8px">Il RIF <b>${rifVecchio}</b> verrà sostituito dal RIF <b>${rifNuovo}</b>.</div>
+        <div style="margin-top:8px; font-weight:bold; color:red;">ATTENZIONE: L'azione è irreversibile e aggiornerà i dati nel database.</div>
+    `, "Conferma Sostituzione");
+
+    // Imposta l'azione in attesa di conferma Modale
+    pendingAction = { 
+        type: 'sostituzione', 
+        rifVecchio: rifVecchio, 
+        rifNuovo: rifNuovo
+    };
+}
+  
 async function onCellAction(action, item){
     if (action === 'ribasso') {
         // Logica specifica per l'aggiornamento del prezzo
@@ -713,7 +752,7 @@ modalConfirm.addEventListener('click', async () => {
     if (!pendingAction) return;
 
     modalBack.style.display = 'none';
-    const { type, rif, payload } = pendingAction;
+    const { type, rif, payload, rifVecchio, rifNuovo } = pendingAction; // Aggiunti rifVecchio, rifNuovo
     showToast('Eseguo aggiornamento...', 2000);
 
     try {
@@ -722,11 +761,15 @@ modalConfirm.addEventListener('click', async () => {
             resp = await postRibasso(rif, payload.nuovo);
         } else if (type === 'placeholder') {
             resp = await postPlaceholder(rif, payload.placeholder);
+        } else if (type === 'sostituzione') { // <-- NUOVA LOGICA DI SOSTITUZIONE
+            resp = await postSostituzione(rifVecchio, rifNuovo); 
         }
 
         if (resp && resp.success) {
             showToast('Aggiornamento riuscito!', 2500);
             await loadData(); // Ricarica i dati per aggiornare l'intera griglia
+            inputRifVecchio.value = ''; // Pulisci gli input
+            inputRifNuovo.value = '';
         } else {
             showToast('Errore: ' + (resp.error || 'unknown'), 3500);
         }
@@ -739,6 +782,8 @@ modalConfirm.addEventListener('click', async () => {
 
 modalCancel.addEventListener('click', ()=> { modalBack.style.display='none'; pendingAction=null; });
 modalBack.addEventListener('click', (e) => { if(e.target===modalBack){ modalBack.style.display='none'; pendingAction=null;}});
+
+  
 
 
 // ======================================================================
@@ -819,6 +864,9 @@ async function onSearch() {
 // INIZIALIZZAZIONE E EVENT LISTENERS
 // ======================================================================
 
+// ... (dopo il listener per bottoneCerca)
+bottoneSostituzione.addEventListener('click', onSostituzione);
+  
 // Imposta l'agenzia all'avvio se è presente nell'URL
 const agenziaUrl = getAgenziaFromUrl();
 if (agenziaUrl && agenzieBlocchi.hasOwnProperty(agenziaUrl)) {
