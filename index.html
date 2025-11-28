@@ -21,8 +21,35 @@
     margin-top: 20px;
   }
 
-  label { font-weight: bold; }
-  select { padding: 5px 10px; margin: 10px 0; font-size: 14px; }
+  /* STILE SELECT E LABEL */
+  label { 
+    font-weight: bold; 
+    color: #4c565c;
+    margin-right: 10px;
+  }
+  select { 
+    padding: 8px 15px; 
+    margin: 10px 0; 
+    font-size: 16px; 
+    border: 2px solid #b30933; 
+    border-radius: 8px; 
+    background-color: white; 
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b30933' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px; 
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
+  }
   
   /* Stile per il campo di ricerca */
   .cerca-container {
@@ -44,6 +71,8 @@
     flex-direction: column;
     gap: 15px;
     align-items: center;
+    min-height: 400px;
+    position: relative;
   }
 
   .riga { display: flex; gap: 10px; justify-content: center; }
@@ -73,21 +102,35 @@
     transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
     text-align: center;
     overflow-wrap: break-word;
+    position: relative; /* Necessario per il pulsante */
   }
 
   .cella:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
 
-  /* Classi per stato */
-  .cella.offline { 
-    background-color: #fce8e8; /* Rosso/Rosa molto chiaro */
-    color: #b30933; /* Rosso scuro, come il tuo H1 */
+  /* Classi STATI (da ui.js) */
+  .cella.rosso { /* Offline */
+    background-color: #fce8e8; 
+    color: #b30933; 
     font-weight: bold;
   }
-  .cella.segnaposto { background-color: #87A0CC; color: white; }
-  .cella.ribasso { background-color: #ffeb99; color: #555; }
-  .cella.normale { background-color: #a0e7a0; color: #333; }
+  .cella.bianco { /* Segnaposto */
+    background-color: #87A0CC; 
+    color: white; 
+  }
+  .cella.giallo { /* Ribasso */
+    background-color: #ffeb99; 
+    color: #555; 
+  }
+  .cella.verde { /* Normale */
+    background-color: #a0e7a0; 
+    color: #333; 
+  }
+  .cella.blu { /* Vecchio (>180 giorni) */
+    background-color: #c0d9f0; 
+    color: #4c565c; 
+  }
   
-  /* CLASSE PER EVIDENZIAZIONE RICERCA (BLU/AZZURRO) */
+  /* CLASSE PER EVIDENZIAZIONE RICERCA */
   .cella.evidenziato {
     background-color: #4da6ff !important;
     color: white !important;
@@ -124,20 +167,21 @@
     word-break: break-word;
   }
 
-  button {
+  /* Pulsante Ribasso (nuovo stile più discreto) */
+  .cella button {
     margin-top: 4px;
     font-size: 10px;
     padding: 2px 5px;
     border: none;
     border-radius: 5px;
-    background-color: #ffb74d;
+    background-color: #ff8c00; /* Arancione scuro */
     color: white;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.3s;
   }
 
-  button:hover { 
-      background-color: #ffa726; 
+  .cella button:hover { 
+      background-color: #e67e00; 
       transform: scale(1.1); 
   }
   
@@ -160,11 +204,89 @@
     font-size: 14px;
   }
 
-  /* Animazione fade */
-  .fade {
-    animation: fadeIn 0.4s ease-in-out;
+  /* MODAL, TOAST, LOADING STYLES */
+  #loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #b30933;
+    z-index: 1000;
+    display: none;
   }
 
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    opacity: 0.9;
+    z-index: 1000;
+    display: none;
+  }
+
+  #modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #modalContainer {
+    background-color: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+  }
+
+  #modalContent {
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+
+  #modalButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  #modalCancel, #modalConfirm {
+    font-size: 14px;
+    padding: 8px 15px;
+    cursor: pointer;
+    margin-top: 0;
+  }
+
+  #modalConfirm {
+    background-color: #b30933;
+    color: white;
+  }
+
+  #modalCancel {
+    background-color: #ccc;
+    color: #333;
+  }
+
+  /* Animazione fade */
+  .fade { animation: fadeIn 0.4s ease-in-out; }
   @keyframes fadeIn {
     0% { opacity: 0; transform: scale(0.9); }
     100% { opacity: 1; transform: scale(1); }
@@ -175,14 +297,19 @@
 
 <h1>Dashboard Vetrine</h1>
 
-<label for="selezionaAgenzia">Seleziona Agenzia:</label>
-<select id="selezionaAgenzia">
-  <option value="portogruaro">Portogruaro</option>
-  <option value="sanvito">San Vito</option>
-  <option value="pordenone">Pordenone</option>
-</select>
+<div>
+  <label for="selezionaAgenzia">Seleziona Agenzia:</label>
+  <select id="selezionaAgenzia">
+    <option value="portogruaro">Portogruaro</option>
+    <option value="sanvito">San Vito</option>
+    <option value="pordenone">Pordenone</option>
+  </select>
+</div>
 
-<div class="griglia" id="griglia"></div>
+<div class="griglia" id="griglia">
+  </div>
+
+<div id="loading">Caricamento dati...</div>
 
 <div class="cerca-container">
     <input type="text" id="inputRicerca" placeholder="Cerca Riferimento (es. 1234)">
@@ -195,168 +322,411 @@
   <div>Offline: <span id="offline">0</span></div>
 </div>
 
+<div id="modal">
+    <div id="modalContainer">
+        <div id="modalContent"></div>
+        <div id="modalButtons">
+            <button id="modalCancel">Annulla</button>
+            <button id="modalConfirm">Conferma</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
+// ======================================================================
+// CONFIGURAZIONE API E FUNZIONI (da api.js)
+// ======================================================================
+
+// !!! AGGIORNA QUESTO VALORE CON IL TUO WORKER URL !!!
+const WORKER_BASE = "https://vetrine.it-immobiliarenordest.workers.dev"; 
+const TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, opts = {}, timeout = TIMEOUT_MS) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+    } catch (err) {
+        clearTimeout(id);
+        throw err;
+    }
+}
+
+async function getAllVetrine() {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine`);
+    if (!res.ok) throw new Error("Errore caricamento vetrine");
+    const body = await res.json();
+    if (!body.success) throw new Error(body.error || "Errore API");
+    return body.data; 
+}
+
+async function searchByRif(rif) {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine/rif/${encodeURIComponent(rif)}`);
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body.success ? body.immobile : null;
+}
+
+async function postRibasso(rif, nuovoPrezzo) {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine/ribasso`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Il Worker ha bisogno di 'nuovo_prezzo' e 'rif'
+        body: JSON.stringify({ rif: String(rif), nuovo_prezzo: Number(nuovoPrezzo) })
+    }, TIMEOUT_MS);
+    return res.json();
+}
+
+async function postPlaceholder(rif, placeholder) {
+    const res = await fetchWithTimeout(`${WORKER_BASE}/vetrine/placeholder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Il Worker ha bisogno di 'placeholder' (boolean) e 'rif'
+        body: JSON.stringify({ rif: String(rif), placeholder: !!placeholder })
+    }, TIMEOUT_MS);
+    return res.json();
+}
+
+// ======================================================================
+// VARIABILI GLOBALI E UTILITY (da ui.js)
+// ======================================================================
+
 const agenzieBlocchi = {
   portogruaro: [4, 4, 3, 4, 5],
   sanvito: [2, 2, 2],
   pordenone: [3, 5]
 };
 const righe = 3;
-let immobili = [];
+let allData = {}; // Dati raggruppati per agenzia (come in ui.js)
+let rifDaCercare = '';
+let pendingAction = null; // Stato per l'azione in attesa di conferma Modale
 
+// Elementi UI
 const grigliaDiv = document.getElementById('griglia');
 const selectAgenzia = document.getElementById('selezionaAgenzia');
 const inputRicerca = document.getElementById('inputRicerca');
 const bottoneCerca = document.getElementById('bottoneCerca');
+const modalBack = document.getElementById('modal');
+const modalContent = document.getElementById('modalContent');
+const modalCancel = document.getElementById('modalCancel');
+const modalConfirm = document.getElementById('modalConfirm');
+const loadingEl = document.getElementById('loading');
+const toast = document.getElementById('toast');
 
-let rifDaCercare = '';
 
-async function caricaVetrine() {
-  try {
-    const res = await fetch("https://vetrine.it-immobiliarenordest.workers.dev/vetrine");
-    const json = await res.json();
-    if (!json.success) { console.error("Errore API:", json.message); return; }
-    immobili = json.data;
-  } catch (error) {
-    console.error("Errore durante il caricamento delle vetrine:", error);
-  }
-  
-  renderGriglia();
+function formatMoney(n){
+    return Number(n).toLocaleString('it-IT');
 }
 
-function renderGriglia() {
-  const agenzia = selectAgenzia.value;
-  const blocchi = agenzieBlocchi[agenzia];
-  const immobiliFiltrati = immobili.filter(i => i.agenzia === agenzia); 
+function daysSince(dateStr){
+    if (!dateStr) return 9999;
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now - d;
+    return Math.floor(diff / (1000*60*60*24));
+}
 
-  grigliaDiv.innerHTML = '';
-  let indice = 0;
-  let countRibasso = 0;
-  let countOffline = 0;
+function showModal(html, confirmText = "Conferma"){
+    modalContent.innerHTML = html;
+    modalConfirm.textContent = confirmText;
+    modalBack.style.display='flex';
+}
 
-  const celleTotali = blocchi.reduce((sum, current) => sum + current, 0) * righe;
-  const immobiliConSegnaposto = [...immobiliFiltrati];
+function showToast(msg, ms=2500){
+    toast.innerText = msg;
+    toast.style.display='block';
+    setTimeout(()=>{ toast.style.display='none'; }, ms);
+}
 
-  while (immobiliConSegnaposto.length < celleTotali) {
-      immobiliConSegnaposto.push(null);
-  }
+function showLoading(flag){
+    loadingEl.style.display = flag ? 'block' : 'none';
+}
 
-  for (let r = 0; r < righe; r++) {
-    const rigaDiv = document.createElement('div');
-    rigaDiv.classList.add('riga');
+// Classificazione Stati (Rosso, Giallo, ecc.)
+function computeClass(item){
+    if (!item) return 'rosso'; // Tratta le celle vuote come OFFLINE/Rosso
+    if (item.prezzo_myagency === 0) return 'rosso'; // Offline forzato (come da richiesta)
+    if (item.segnaposto) return 'bianco';
+    
+    const prezzo = Number(item.prezzo || 0);
+    const prezzo_ref = Number(item.prezzo_myagency || item.prezzo || 0);
+    const days = daysSince(item.timestamp);
+    
+    if (prezzo > prezzo_ref) return 'giallo'; // Ribasso da fare (prezzo in vetrina > prezzo myagency)
+    if (days > 180) return 'blu';
+    return 'verde';
+}
 
-    blocchi.forEach((colonne) => {
-      const bloccoDiv = document.createElement('div');
-      bloccoDiv.classList.add('blocco');
+// ======================================================================
+// LOGICA DI CARICAMENTO E AGGIORNAMENTO DATI
+// ======================================================================
 
-      for (let c = 0; c < colonne; c++) {
-        const immobile = immobiliConSegnaposto[indice];
-        const cella = document.createElement('div');
-        cella.classList.add('cella', 'fade');
-
-        // LOGICA OFFLINE: Se l'immobile non esiste O se il prezzo MyAgency è 0
-        if (!immobile || immobile.prezzo_myagency === 0) {
-          cella.classList.add('offline');
-          cella.textContent = "OFFLINE";
-          if(indice < immobiliFiltrati.length) countOffline++;
-
-        } else if (immobile.segnaposto) {
-          cella.classList.add('segnaposto');
-          cella.textContent = "SEGNAPOSTO";
-
-        } else {
-          const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
-
-          if (isRibasso) {
-            cella.classList.add('ribasso');
-            countRibasso++;
-            cella.innerHTML = `
-              <div class="prezzo-vecchio">${immobile.prezzo} €</div>
-              <div class="prezzo-nuovo">↓ ${immobile.prezzo_myagency} €</div>
-              <div class="comune">${immobile.comune}</div>
-            `;
-          } else {
-            cella.classList.add('normale');
-            cella.innerHTML = `
-              <div class="rif">${immobile.rif}</div>
-              <div class="prezzo-nuovo">${immobile.prezzo} €</div>
-              <div class="comune">${immobile.comune}</div>
-            `;
-          }
-        }
+async function loadData(){
+    showLoading(true);
+    try {
+        const data = await getAllVetrine();
         
-        // LOGICA DI EVIDENZIAZIONE
-        if (immobile && immobile.rif && rifDaCercare && immobile.rif.toLowerCase() === rifDaCercare.toLowerCase()) {
-            cella.classList.add('evidenziato');
-            setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        }
-
-        // AGGIORNATA: Aggiungi pulsante Ribasso SOLO se non è segnaposto E c'è un ribasso E il prezzo_myagency è > 0
-        if (immobile && !immobile.segnaposto && immobile.prezzo_myagency > 0 && immobile.prezzo_myagency < immobile.prezzo) {
-          const btn = document.createElement('button');
-          btn.textContent = "Ribasso";
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm(`Confermi ribasso per ${immobile.rif}?`)) {
-              immobile.prezzo = immobile.prezzo_myagency;
-              renderGriglia();
-            }
-          });
-          cella.appendChild(btn);
-        }
-        
-        // Logica click per segnaposto
-        if (immobile) {
-            cella.addEventListener('click', () => {
-                
-                // 1. Blocco se è un cartello di Ribasso (giallo) e non è già un segnaposto
-                const isRibasso = immobile.prezzo_myagency < immobile.prezzo;
-                if (isRibasso && !immobile.segnaposto) {
-                    return; 
-                }
-                
-                // 2. Chiedi conferma per TUTTI gli altri
-                if (confirm(`Confermi la modifica di stato per il cartello ${immobile.rif}?`)) {
-                    immobile.segnaposto = !immobile.segnaposto;
-                    renderGriglia();
-                }
+        // Normalizza: se il server ritorna un array flat, raggruppa per agenzia
+        if (Array.isArray(data)) {
+            const grouped = {};
+            data.forEach(it => {
+                const ag = it.agenzia || 'portogruaro';
+                grouped[ag] = grouped[ag] || [];
+                grouped[ag].push(it);
             });
+            allData = grouped;
+        } else {
+            allData = data;
         }
+        showLoading(false);
+        renderGriglia();
+    } catch (err) {
+        showLoading(false);
+        showToast('Errore caricamento: ' + err.message, 3500);
+    }
+}
 
-        bloccoDiv.appendChild(cella);
-        indice++;
-      }
+function renderGriglia(highlightRif){
+    const agenzia = selectAgenzia.value;
+    const blocchi = agenzieBlocchi[agenzia];
+    const immobiliFiltrati = allData[agenzia] || []; 
 
-      rigaDiv.appendChild(bloccoDiv);
+    grigliaDiv.innerHTML = '';
+    let indice = 0;
+    let countRibasso = 0;
+    let countOffline = 0;
+
+    const celleTotali = blocchi.reduce((sum, current) => sum + current, 0) * righe;
+    const immobiliPerGriglia = [...immobiliFiltrati];
+
+    while (immobiliPerGriglia.length < celleTotali) {
+        immobiliPerGriglia.push(null);
+    }
+
+    // Calcolo Conteggi
+    immobiliFiltrati.forEach(immobile => {
+        const cls = computeClass(immobile);
+        if (cls === 'giallo') countRibasso++;
+        if (cls === 'rosso') countOffline++;
     });
 
-    grigliaDiv.appendChild(rigaDiv);
-  }
+    document.getElementById('totale').textContent = immobiliFiltrati.length;
+    document.getElementById('ribassi').textContent = countRibasso;
+    document.getElementById('offline').textContent = countOffline;
 
-  document.getElementById('totale').textContent = immobiliFiltrati.length;
-  document.getElementById('ribassi').textContent = countRibasso;
-  document.getElementById('offline').textContent = countOffline;
-}
+    for (let r = 0; r < righe; r++) {
+        const rigaDiv = document.createElement('div');
+        rigaDiv.classList.add('riga');
 
-function gestisciRicerca() {
-    const valore = inputRicerca.value.trim();
-    rifDaCercare = valore.toLowerCase(); 
-    
-    if (rifDaCercare) {
-        inputRicerca.value = rifDaCercare.toUpperCase();
+        blocchi.forEach((colonne) => {
+            const bloccoDiv = document.createElement('div');
+            bloccoDiv.classList.add('blocco');
+
+            for (let c = 0; c < colonne; c++) {
+                const immobile = immobiliPerGriglia[indice];
+                const cella = document.createElement('div');
+                cella.classList.add('cella', 'fade');
+                
+                const cls = computeClass(immobile);
+                cella.classList.add(cls);
+
+                // CONTENUTO DELLA CELLA
+                if (cls === 'rosso') {
+                    cella.textContent = "OFFLINE";
+                } else if (cls === 'bianco') {
+                    cella.textContent = "SEGNAPOSTO";
+                } else if (immobile) {
+                    const prezzoCorrente = formatMoney(immobile.prezzo);
+                    
+                    if (cls === 'giallo') {
+                        // Cartello Giallo (Ribasso da fare)
+                        const prezzoMyAgency = formatMoney(immobile.prezzo_myagency);
+                        cella.innerHTML = `
+                            <div class="prezzo-vecchio">${prezzoCorrente} €</div>
+                            <div class="prezzo-nuovo">↓ ${prezzoMyAgency} €</div>
+                            <div class="comune">${immobile.comune}</div>
+                        `;
+                    } else {
+                        // Cartello Verde o Blu (Normale/Vecchio)
+                        cella.innerHTML = `
+                            <div class="rif">${immobile.rif}</div>
+                            <div class="prezzo-nuovo">${prezzoCorrente} €</div>
+                            <div class="comune">${immobile.comune}</div>
+                        `;
+                    }
+                }
+                
+                // LOGICA DI EVIDENZIAZIONE
+                if (immobile && immobile.rif && rifDaCercare && immobile.rif.toLowerCase() === rifDaCercare.toLowerCase()) {
+                    cella.classList.add('evidenziato');
+                    // Scrolla solo se è la prima volta che viene renderizzato dopo la ricerca
+                    if (highlightRif === immobile.rif) {
+                        setTimeout(() => cella.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                    }
+                }
+
+                // AGGIUNGI PULSANTE RIBASSO (SOLO SU GIALLO)
+                if (cls === 'giallo') {
+                    const btn = document.createElement('button');
+                    btn.textContent = "Aggiorna";
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Chiama l'azione Ribasso
+                        onCellAction('ribasso', immobile); 
+                    });
+                    cella.appendChild(btn);
+                }
+                
+                // LOGICA CLICK PER SEGNAPOSTO (SU TUTTE TRANNE GIALLO)
+                if (immobile && cls !== 'giallo') {
+                    cella.addEventListener('click', () => {
+                        // Chiama l'azione Segnaposto/Placeholder
+                        onCellAction('placeholder', immobile); 
+                    });
+                }
+
+                bloccoDiv.appendChild(cella);
+                indice++;
+            }
+
+            rigaDiv.appendChild(bloccoDiv);
+        });
+
+        grigliaDiv.appendChild(rigaDiv);
     }
-    
-    renderGriglia(); 
 }
 
-selectAgenzia.addEventListener('change', renderGriglia);
-bottoneCerca.addEventListener('click', gestisciRicerca);
-inputRicerca.addEventListener('keypress', (e) => { 
-    if (e.key === 'Enter') {
-        gestisciRicerca();
+// ======================================================================
+// AZIONI CELLA E MODALE (da ui.js)
+// ======================================================================
+
+async function onCellAction(action, item){
+    if (action === 'ribasso') {
+        // Logica specifica per l'aggiornamento del prezzo
+        const rif = item.rif;
+        const nuovoPrezzo = item.prezzo_myagency; // Prezzo di destinazione
+        
+        showModal(`
+            <div>Confermi l'aggiornamento del prezzo per RIF: <b>${rif}</b>?</div>
+            <div style="margin-top:8px">Il prezzo passerà da <b>€ ${formatMoney(item.prezzo)}</b> a <b>€ ${formatMoney(nuovoPrezzo)}</b>.</div>
+        `, "Conferma Ribasso");
+        
+        pendingAction = { type: 'ribasso', rif: rif, payload: { nuovo: nuovoPrezzo } };
+        
+    } else if (action === 'placeholder') {
+        // Logica per Segnaposto (toggle)
+        const newVal = !item.segnaposto;
+        const statoTesto = newVal ? 'SI' : 'NO';
+        
+        showModal(`
+            <div>RIF: <b>${item.rif}</b></div>
+            <div>Impostare Segnaposto: <b>${statoTesto}</b>?</div>
+        `, "Conferma");
+        
+        pendingAction = { type: 'placeholder', rif: item.rif, payload: { placeholder: newVal } };
+    }
+}
+
+// Handler generale per il click su Conferma del Modale
+modalConfirm.addEventListener('click', async () => {
+    if (!pendingAction) return;
+
+    modalBack.style.display = 'none';
+    const { type, rif, payload } = pendingAction;
+    showToast('Eseguo aggiornamento...', 2000);
+
+    try {
+        let resp;
+        if (type === 'ribasso') {
+            resp = await postRibasso(rif, payload.nuovo);
+        } else if (type === 'placeholder') {
+            resp = await postPlaceholder(rif, payload.placeholder);
+        }
+
+        if (resp && resp.success) {
+            showToast('Aggiornamento riuscito!', 2500);
+            await loadData(); // Ricarica i dati per aggiornare l'intera griglia
+        } else {
+            showToast('Errore: ' + (resp.error || 'unknown'), 3500);
+        }
+    } catch (err) {
+        showToast('Errore rete o timeout: ' + err.message, 3500);
+    } finally {
+        pendingAction = null;
     }
 });
-caricaVetrine();
+
+modalCancel.addEventListener('click', ()=> { modalBack.style.display='none'; pendingAction=null; });
+modalBack.addEventListener('click', (e) => { if(e.target===modalBack){ modalBack.style.display='none'; pendingAction=null;}});
+
+
+// ======================================================================
+// GESTIONE RICERCA E URL
+// ======================================================================
+
+function getAgenziaFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('agenzia'); 
+}
+
+function cambiaAgenziaConUrl() {
+    const nuovaAgenzia = selectAgenzia.value;
+    const currentUrl = new URL(window.location.href);
+    
+    currentUrl.searchParams.set('agenzia', nuovaAgenzia);
+    
+    // Ricarica la pagina con il nuovo URL per applicare il filtro
+    window.location.href = currentUrl.toString();
+}
+
+async function onSearch() {
+    const rif = inputRicerca.value.trim();
+    if (!rif) return showToast('Inserisci un RIF', 2000);
+    
+    showLoading(true);
+    try {
+        const imm = await searchByRif(rif);
+        showLoading(false);
+        
+        if (!imm) return showToast(`Nessun immobile con RIF ${rif}`, 3000);
+        
+        // Se trovato, imposta l'agenzia corretta e renderizza
+        selectAgenzia.value = imm.agenzia;
+        
+        rifDaCercare = imm.rif.toLowerCase();
+        renderGriglia(imm.rif); // Passa il RIF per l'highlight e lo scroll
+        showToast(`Trovato RIF ${imm.rif}`, 2000);
+    } catch (err) {
+        showLoading(false);
+        showToast('Errore ricerca: ' + err.message, 3500);
+    }
+}
+
+
+// ======================================================================
+// INIZIALIZZAZIONE E EVENT LISTENERS
+// ======================================================================
+
+// Imposta l'agenzia all'avvio se è presente nell'URL
+const agenziaUrl = getAgenziaFromUrl();
+if (agenziaUrl && agenzieBlocchi.hasOwnProperty(agenziaUrl)) {
+    selectAgenzia.value = agenziaUrl;
+}
+
+selectAgenzia.addEventListener('change', cambiaAgenziaConUrl); 
+bottoneCerca.addEventListener('click', onSearch);
+inputRicerca.addEventListener('keypress', (e) => { 
+    if (e.key === 'Enter') {
+        onSearch();
+    }
+});
+
+// Avvia il caricamento iniziale dei dati
+loadData();
 </script>
 
 </body>
