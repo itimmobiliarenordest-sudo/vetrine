@@ -533,17 +533,23 @@ function showLoading(flag){
     loadingEl.style.display = flag ? 'block' : 'none';
 }
 
-// Classificazione Stati (Rosso, Giallo, ecc.)
+// Classificazione Stati (Corretta con priorità al Segnaposto)
 function computeClass(item){
-    if (!item) return 'rosso'; // Tratta le celle vuote come OFFLINE/Rosso
-    if (item.prezzo_myagency === 0) return 'rosso'; // Offline forzato (come da richiesta)
+    if (!item) return 'rosso'; 
+    
+    // 1. PRIORITÀ ASSOLUTA AL SEGNAPOSTO
+    // Se l'utente ha messo un segnaposto, la cella deve essere BIANCA
     if (item.segnaposto) return 'bianco';
+    
+    // 2. CONTROLLO OFFLINE
+    if (item.prezzo_myagency === 0) return 'rosso'; 
     
     const prezzo = Number(item.prezzo || 0);
     const prezzo_ref = Number(item.prezzo_myagency || item.prezzo || 0);
     const days = daysSince(item.timestamp);
     
-    if (prezzo > prezzo_ref) return 'giallo'; // Ribasso da fare (prezzo in vetrina > prezzo myagency)
+    // 3. ALTRI STATI
+    if (prezzo > prezzo_ref) return 'giallo'; 
     if (days > 180) return 'blu';
     return 'verde';
 }
