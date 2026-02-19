@@ -21,7 +21,6 @@
     margin-top: 20px;
   }
 
-  /* STILE SELECT E LABEL */
   label { 
     font-weight: bold; 
     color: #4c565c;
@@ -51,7 +50,6 @@
     outline: none;
   }
   
-  /* Stile per il campo di ricerca */
   .cerca-container {
     margin-top: 20px;
     display: flex;
@@ -108,7 +106,6 @@
 
   .cella:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
 
-  /* Classi STATI */
   .cella.rosso { background-color: #fce8e8; color: #b30933; font-weight: bold; }
   .cella.bianco { background-color: #87A0CC; color: white; }
   .cella.giallo { background-color: #ffeb99; color: #555; }
@@ -378,6 +375,14 @@ async function loadData(){
 
 function renderGriglia(highlightRif){
     const agenzia = selectAgenzia.value;
+    
+    // AGGIORNAMENTO URL
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get('agenzia') !== agenzia) {
+        currentUrl.searchParams.set('agenzia', agenzia);
+        window.history.pushState({ path: currentUrl.href }, '', currentUrl.href);
+    }
+
     const blocchi = agenzieBlocchi[agenzia];
     const immobiliFiltrati = allData[agenzia] || []; 
     grigliaDiv.innerHTML = '';
@@ -499,8 +504,16 @@ bottoneCerca.onclick = () => {
     renderGriglia(rifDaCercare);
 };
 
+// GESTIONE CAMBIO TENDINA
 selectAgenzia.onchange = () => renderGriglia();
 modalCancel.onclick = () => { modalBack.style.display='none'; pendingAction=null; };
+
+// INIZIALIZZAZIONE ALL'AVVIO
+const params = new URLSearchParams(window.location.search);
+const agenziaUrl = params.get('agenzia');
+if (agenziaUrl && agenzieBlocchi.hasOwnProperty(agenziaUrl)) {
+    selectAgenzia.value = agenziaUrl;
+}
 
 loadData();
 </script>
