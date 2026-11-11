@@ -70,6 +70,7 @@
     gap: 15px;
     align-items: center;
     min-height: 350px;
+    flex-shrink: 0;
     position: relative;
     margin-top: 20px;
   }
@@ -86,6 +87,16 @@
 
   .blocco:last-child { border-right: none; }
   .blocco.prima-porta { border-right: none; }
+
+  .lato-titolo {
+    font-weight: bold;
+    color: #b30933;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+    margin-bottom: -5px;
+  }
 
   .porta {
     width: 70px;
@@ -230,6 +241,7 @@
     <option value="portogruaro">Portogruaro</option>
     <option value="sanvito">San Vito</option>
     <option value="pordenone">Pordenone</option>
+    <option value="udine">Udine</option>
   </select>
 </div>
 
@@ -322,7 +334,14 @@ async function postSostituzione(rifVecchio, rifNuovo) {
 }
 
 // UI State
-const agenzieBlocchi = { portogruaro: [4, 4, 3, 4, 5], sanvito: [2, 2, 2], pordenone: [3, 3, 3, 3] };
+const agenzieBlocchi = { portogruaro: [4, 4, 3, 4, 5], sanvito: [2, 2, 2], pordenone: [3, 3, 3, 3], udine: [4, 1, 1, 1, 1] };
+// Agenzie con vetrine su più lati del negozio (in ordine: prima il primo lato, poi il secondo)
+const agenzieLati = {
+    udine: [
+        { nome: 'Vicolo Silio', blocchi: [4, 1, 1], porte: [1] },
+        { nome: 'Via Rizzani', blocchi: [1, 1], porte: [] }
+    ]
+};
 // Porte d'ingresso: indice della vetrina DOPO la quale c'è la porta (solo per l'agenzia indicata)
 const agenziePorte = { pordenone: [0] };
 const righe = 3;
@@ -403,6 +422,8 @@ function renderGriglia(highlightRif){
     }
 
     const blocchi = agenzieBlocchi[agenzia];
+    // Lati del negozio: se l'agenzia non ne ha più di uno, un solo lato senza titolo
+    const lati = agenzieLati[agenzia] || [{ nome: null, blocchi: blocchi, porte: agenziePorte[agenzia] || [] }];
     const immobiliFiltrati = allData[agenzia] || []; 
     grigliaDiv.innerHTML = '';
     
@@ -423,12 +444,19 @@ function renderGriglia(highlightRif){
     document.getElementById('ribassi').textContent = countRibasso;
     document.getElementById('offline').textContent = countOffline;
 
+    lati.forEach(lato => {
+    const porte = lato.porte || [];
+    if (lato.nome) {
+        const titolo = document.createElement('div');
+        titolo.className = 'lato-titolo';
+        titolo.textContent = lato.nome;
+        grigliaDiv.appendChild(titolo);
+    }
     for (let r = 0; r < righe; r++) {
         const rigaDiv = document.createElement('div');
         rigaDiv.classList.add('riga');
 
-        const porte = agenziePorte[agenzia] || [];
-        blocchi.forEach((colonne, bIdx) => {
+        lato.blocchi.forEach((colonne, bIdx) => {
             const bloccoDiv = document.createElement('div');
             bloccoDiv.classList.add('blocco');
 
@@ -488,6 +516,7 @@ function renderGriglia(highlightRif){
         });
         grigliaDiv.appendChild(rigaDiv);
     }
+    });
 }
 
 async function onCellAction(action, item){
