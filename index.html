@@ -85,6 +85,23 @@
   }
 
   .blocco:last-child { border-right: none; }
+  .blocco.prima-porta { border-right: none; }
+
+  .porta {
+    width: 70px;
+    border-left: 3px solid #4c565c;
+    border-right: 3px solid #4c565c;
+    background: repeating-linear-gradient(45deg, #ececf2, #ececf2 6px, #f4f4f9 6px, #f4f4f9 12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: #4c565c;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
 
   .cella {
     width: 90px; height: 80px;
@@ -305,7 +322,9 @@ async function postSostituzione(rifVecchio, rifNuovo) {
 }
 
 // UI State
-const agenzieBlocchi = { portogruaro: [4, 4, 3, 4, 5], sanvito: [2, 2, 2], pordenone: [3, 5] };
+const agenzieBlocchi = { portogruaro: [4, 4, 3, 4, 5], sanvito: [2, 2, 2], pordenone: [3, 3, 3, 3] };
+// Porte d'ingresso: indice della vetrina DOPO la quale c'è la porta (solo per l'agenzia indicata)
+const agenziePorte = { pordenone: [0] };
 const righe = 3;
 let allData = {}; 
 let rifDaCercare = '';
@@ -408,7 +427,8 @@ function renderGriglia(highlightRif){
         const rigaDiv = document.createElement('div');
         rigaDiv.classList.add('riga');
 
-        blocchi.forEach((colonne) => {
+        const porte = agenziePorte[agenzia] || [];
+        blocchi.forEach((colonne, bIdx) => {
             const bloccoDiv = document.createElement('div');
             bloccoDiv.classList.add('blocco');
 
@@ -457,6 +477,14 @@ function renderGriglia(highlightRif){
                 indice++;
             }
             rigaDiv.appendChild(bloccoDiv);
+
+            if (porte.includes(bIdx)) {
+                bloccoDiv.classList.add('prima-porta');
+                const portaDiv = document.createElement('div');
+                portaDiv.className = 'porta';
+                if (r === 1) portaDiv.textContent = 'INGRESSO';
+                rigaDiv.appendChild(portaDiv);
+            }
         });
         grigliaDiv.appendChild(rigaDiv);
     }
