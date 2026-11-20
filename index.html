@@ -283,6 +283,8 @@
 <script>
 const WORKER_BASE = "https://vetrine.it-immobiliarenordest.workers.dev"; 
 const TIMEOUT_MS = 8000;
+// La sostituzione cerca il nuovo RIF scorrendo tutto il portafoglio Gabetti: può richiedere più tempo
+const TIMEOUT_SOSTITUZIONE_MS = 90000;
 
 // API Helpers
 async function fetchWithTimeout(url, opts = {}, timeout = TIMEOUT_MS) {
@@ -329,7 +331,7 @@ async function postSostituzione(rifVecchio, rifNuovo) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rif_vecchio: String(rifVecchio), rif_nuovo: String(rifNuovo), agenzia: agenziaCorrente })
-    });
+    }, TIMEOUT_SOSTITUZIONE_MS);
     return res.json();
 }
 
@@ -533,7 +535,13 @@ async function onCellAction(action, item){
 modalConfirm.onclick = async () => {
     if (!pendingAction) return;
     modalBack.style.display = 'none';
-    showToast('Eseguo...');
+    const isSostituzione = pendingAction.type === 'sostituzione';
+    if (isSostituzione) {
+        loadingEl.textContent = 'Ricerca del RIF su Gabetti in corso… può richiedere fino a un minuto';
+        showLoading(true);
+    } else {
+        showToast('Eseguo...');
+    }
     try {
         let resp;
         if (pendingAction.type === 'ribasso') resp = await postRibasso(pendingAction.rif, pendingAction.payload.nuovo);
@@ -545,8 +553,13 @@ modalConfirm.onclick = async () => {
             await loadData();
             inputRifVecchio.value = ''; inputRifNuovo.value = '';
         } else { showToast('Errore: ' + resp.error); }
-    } catch (err) { showToast('Errore rete'); }
-    finally { pendingAction = null; }
+    } catch (err) {
+        showToast(err && err.name === 'AbortError' ? 'Tempo scaduto: Gabetti non ha risposto, riprova' : 'Errore rete');
+    }
+    finally {
+        if (isSostituzione) { showLoading(false); loadingEl.textContent = 'Caricamento dati...'; }
+        pendingAction = null;
+    }
 };
 
 bottoneSostituzione.onclick = () => {
